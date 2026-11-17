@@ -36,6 +36,7 @@ pub struct App {
     pub collection: bool,
     pub exports: bool,
     pub failures: Arc<Mutex<HashMap<String, (u32, i64)>>>,
+    pub auth_slots: Arc<tokio::sync::Semaphore>,
 }
 pub struct ApiError(pub StatusCode, pub String);
 impl ApiError {
@@ -79,17 +80,29 @@ async fn origin_check(req: Request, next: Next) -> Response {
         .insert(header::X_CONTENT_TYPE_OPTIONS, "nosniff".parse().unwrap());
     r.headers_mut()
         .insert(header::CACHE_CONTROL, "no-store".parse().unwrap());
+    r.headers_mut()
+        .insert(header::REFERRER_POLICY, "no-referrer".parse().unwrap());
+    r.headers_mut()
+        .insert(header::X_FRAME_OPTIONS, "DENY".parse().unwrap());
+    r.headers_mut().insert(header::CONTENT_SECURITY_POLICY, "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'".parse().unwrap());
     r
 }
 async fn limited_login(
     State(a): State<App>,
     Json(v): Json<auth::Credentials>,
 ) -> Result<Response, ApiError> {
+    auth::validate_login(&v)?;
     let key = v.username.to_lowercase();
     let now = chrono::Utc::now().timestamp();
     {
         let mut f = a.failures.lock().unwrap();
         f.retain(|_, x| now - x.1 < 600);
+        if !f.contains_key(&key) && f.len() >= 1024 {
+            return Err(ApiError(
+                StatusCode::TOO_MANY_REQUESTS,
+                "Too many login attempts. Try again later.".into(),
+            ));
+        }
         let ent = f.entry(key.clone()).or_insert((0, now));
         if ent.0 >= 10 {
             return Err(ApiError(
@@ -160,14 +173,26 @@ fn router(a: App, static_dir: PathBuf) -> Router {
             "/ingest/tiltbridge/{token}",
             post(tilt::bridge).layer(DefaultBodyLimit::max(65536)),
         )
-        .route("/iSpindel", post(sensors::ispindel))
-        .route("/ispindel", post(sensors::ispindel))
+        .route(
+            "/iSpindel",
+            post(sensors::ispindel).layer(DefaultBodyLimit::max(65536)),
+        )
+        .route(
+            "/ispindel",
+            post(sensors::ispindel).layer(DefaultBodyLimit::max(65536)),
+        )
         .nest(
             "/api/v1",
             protected
                 .route("/auth/status", get(auth::status))
-                .route("/auth/setup", post(auth::setup))
-                .route("/auth/login", post(limited_login)),
+                .route(
+                    "/auth/setup",
+                    post(auth::setup).layer(DefaultBodyLimit::max(4096)),
+                )
+                .route(
+                    "/auth/login",
+                    post(limited_login).layer(DefaultBodyLimit::max(4096)),
+                ),
         )
         .fallback_service(
             tower_http::services::ServeDir::new(&static_dir).not_found_service(
@@ -274,6 +299,10 @@ async fn remove(
         let tx = c.transaction()?;
         let e = db::get(&tx, &id)?;
         anyhow::ensure!(e.kind == kind, "Resource kind mismatch");
+        anyhow::ensure!(
+            e.kind != "batches" || e.data["status"] != "active",
+            "Finish the active batch before deleting or archiving it"
+        );
         let n: i64 = tx.query_row("SELECT COUNT(*) FROM points WHERE source=?", [&id], |r| {
             r.get(0)
         })?;
@@ -500,6 +529,7 @@ async fn main() -> anyhow::Result<()> {
         collection: args.iter().any(|a| a == "--enable-collection"),
         exports: args.iter().any(|a| a == "--enable-export"),
         failures: Arc::new(Mutex::new(HashMap::new())),
+        auth_slots: Arc::new(tokio::sync::Semaphore::new(2)),
     };
     if a.collection {
         tokio::spawn(protocol::collect(a.clone()));
@@ -575,6 +605,7 @@ mod tests {
             collection: false,
             exports: false,
             failures: Arc::new(Mutex::new(HashMap::new())),
+            auth_slots: Arc::new(tokio::sync::Semaphore::new(2)),
         };
         let app = router(a, t.path().into());
         assert_eq!(
@@ -742,6 +773,7 @@ mod proxy_auth_tests {
                 collection: false,
                 exports: false,
                 failures: Arc::new(Mutex::new(HashMap::new())),
+                auth_slots: Arc::new(tokio::sync::Semaphore::new(2)),
             },
             dir.path().into(),
         );
@@ -807,3 +839,6 @@ mod proxy_auth_tests {
         assert!(auth::proxy_config(true, Some(&file)).unwrap().is_some());
     }
 }
+
+#[cfg(test)]
+mod security_tests;

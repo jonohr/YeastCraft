@@ -444,6 +444,7 @@ mod tests {
             collection: false,
             exports: false,
             failures: Arc::new(Mutex::new(HashMap::new())),
+            auth_slots: Arc::new(tokio::sync::Semaphore::new(2)),
         };
         let selection = || Selection {
             degree: 2,

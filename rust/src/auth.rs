@@ -19,6 +19,29 @@ pub struct Credentials {
     pub username: String,
     pub password: String,
 }
+// Keep permits inside the blocking closures: client cancellation must not release
+// capacity while a password hash is still running on a worker thread.
+fn hash_permit(a: &App) -> Result<tokio::sync::OwnedSemaphorePermit, ApiError> {
+    a.auth_slots.clone().try_acquire_owned().map_err(|_| {
+        ApiError(
+            StatusCode::TOO_MANY_REQUESTS,
+            "Password verification is busy. Try again shortly.".into(),
+        )
+    })
+}
+pub fn validate_login(v: &Credentials) -> Result<(), ApiError> {
+    if v.username.trim().is_empty() || v.username.len() > 80 || v.password.len() > 256 {
+        return Err(ApiError::bad("Invalid username or password length"));
+    }
+    Ok(())
+}
+static DUMMY_HASH: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
+    let salt = SaltString::encode_b64(b"fermentrackdummy!").unwrap();
+    Argon2::default()
+        .hash_password(b"invalid-password", &salt)
+        .unwrap()
+        .to_string()
+});
 pub fn digest(s: &str) -> String {
     format!("{:x}", Sha256::digest(s.as_bytes()))
 }
@@ -145,7 +168,9 @@ pub async fn setup(
             "Enter a username and a password with 12–256 characters",
         ));
     }
+    let permit = hash_permit(&a)?;
     a.db.run(move |c| {
+        let _permit = permit;
         let tx = c.transaction()?;
         let n: i64 = tx.query_row("SELECT COUNT(*) FROM users", [], |r| r.get(0))?;
         anyhow::ensure!(n == 0, "Installation already configured");
@@ -167,25 +192,21 @@ pub async fn setup(
 }
 pub async fn login(State(a): State<App>, Json(v): Json<Credentials>) -> Result<Response, ApiError> {
     local_auth_only(&a)?;
-    if v.password.len() > 256 {
-        return Err(ApiError::bad("Ogiltiga uppgifter"));
-    }
+    validate_login(&v)?;
+    let permit = hash_permit(&a)?;
     let token = uuid::Uuid::new_v4().to_string() + &uuid::Uuid::new_v4().to_string();
     let hashed = digest(&token);
     let success =
         a.db.run(move |c| {
+            let _permit = permit;
             let hash = c
                 .query_row("SELECT hash FROM users WHERE name=?", [&v.username], |r| {
                     r.get::<_, String>(0)
                 })
                 .optional()?;
             // Perform the expensive verification even for unknown users.
-            let salt = SaltString::encode_b64(b"fermentrackdummy!").unwrap();
-            let dummy = Argon2::default()
-                .hash_password(b"invalid-password", &salt)
-                .unwrap()
-                .to_string();
-            let parsed = PasswordHash::new(hash.as_deref().unwrap_or(&dummy))
+            let dummy = &*DUMMY_HASH;
+            let parsed = PasswordHash::new(hash.as_deref().unwrap_or(dummy))
                 .map_err(|e| anyhow::anyhow!(e.to_string()))?;
             let ok = Argon2::default()
                 .verify_password(v.password.as_bytes(), &parsed)
@@ -271,6 +292,7 @@ pub async fn password(
         })
         .map(digest)
         .ok_or_else(|| ApiError::bad("Session saknas"))?;
-    a.db.run(move|c|{let tx=c.transaction()?;let (name,hash):(String,String)=tx.query_row("SELECT u.name,u.hash FROM users u JOIN sessions s ON s.name=u.name WHERE s.token=? AND s.expires>?",rusqlite::params![token,chrono::Utc::now().timestamp()],|r|Ok((r.get(0)?,r.get(1)?)))?;let parsed=PasswordHash::new(&hash).map_err(|e|anyhow::anyhow!(e.to_string()))?;anyhow::ensure!(Argon2::default().verify_password(v.old_password.as_bytes(),&parsed).is_ok(),"Current password is incorrect");let salt=SaltString::encode_b64(uuid::Uuid::new_v4().as_bytes()).map_err(|e|anyhow::anyhow!(e.to_string()))?;let hash=Argon2::default().hash_password(v.new_password.as_bytes(),&salt).map_err(|e|anyhow::anyhow!(e.to_string()))?.to_string();tx.execute("UPDATE users SET hash=? WHERE name=?",rusqlite::params![hash,name])?;tx.execute("DELETE FROM sessions WHERE name=?",[name])?;tx.commit()?;Ok(())}).await?;
+    let permit = hash_permit(&a)?;
+    a.db.run(move|c|{let _permit = permit;let tx=c.transaction()?;let (name,hash):(String,String)=tx.query_row("SELECT u.name,u.hash FROM users u JOIN sessions s ON s.name=u.name WHERE s.token=? AND s.expires>?",rusqlite::params![token,chrono::Utc::now().timestamp()],|r|Ok((r.get(0)?,r.get(1)?)))?;let parsed=PasswordHash::new(&hash).map_err(|e|anyhow::anyhow!(e.to_string()))?;anyhow::ensure!(Argon2::default().verify_password(v.old_password.as_bytes(),&parsed).is_ok(),"Current password is incorrect");let salt=SaltString::encode_b64(uuid::Uuid::new_v4().as_bytes()).map_err(|e|anyhow::anyhow!(e.to_string()))?;let hash=Argon2::default().hash_password(v.new_password.as_bytes(),&salt).map_err(|e|anyhow::anyhow!(e.to_string()))?.to_string();tx.execute("UPDATE users SET hash=? WHERE name=?",rusqlite::params![hash,name])?;tx.execute("DELETE FROM sessions WHERE name=?",[name])?;tx.commit()?;Ok(())}).await?;
     Ok(Json(json!({"changed":true,"reauthenticate":true})))
 }

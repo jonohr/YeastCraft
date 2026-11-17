@@ -2219,8 +2219,15 @@ function Detail({ kind, view }: { kind: string; view?: string }) {
             Unarchive batch
           </Button>
         )}
+        {kind === "batches" && e.data.status === "active" && (
+          <p className="muted">
+            Finish this batch before deleting it. Deleting a record does not
+            stop temperature control.
+          </p>
+        )}
         <Button
           className="danger"
+          disabled={kind === "batches" && e.data.status === "active"}
           onClick={async () => {
             if (
               !(await confirmAction(

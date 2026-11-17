@@ -368,6 +368,7 @@ mod tests {
                 collection: true,
                 exports: false,
                 failures: Arc::new(Mutex::new(Default::default())),
+                auth_slots: Arc::new(tokio::sync::Semaphore::new(2)),
             };
             Self {
                 _dir: dir,
