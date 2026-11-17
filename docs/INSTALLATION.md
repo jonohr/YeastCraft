@@ -101,3 +101,11 @@ removing its volumes. Keep a backup and the previous image. Verify fresh reading
 controller mode and target after updates. Do not restore an older database merely
 to roll back an interface change. Future schema changes may need a documented
 migration procedure; this preview does not promise arbitrary version downgrade support.
+
+## Runtime memory
+
+The standalone image sets `MALLOC_MMAP_THRESHOLD_=131072` for its glibc allocator,
+so large temporary password-hashing buffers can be returned to the operating
+system after use. Password hashing strength is unchanged. Concurrent sign-ins still
+need temporary working memory; this is not a guarantee of a fixed maximum usage.
+See [memory verification](MEMORY.md) for measured values and methodology.

@@ -52,3 +52,12 @@ Reproduction commands are in README.md and CONTRIBUTING.md.
 No physical Tilt, TiltBridge, Bluetooth adapter or production deployment was used.
 HTTP integration is experimental and logging-only, with one selected color per
 legacy bridge receiving URL. Protocol evidence and remaining limits are in TILT.md.
+
+## Standalone allocator default — 2026-11-17
+
+The runtime image now includes `MALLOC_MMAP_THRESHOLD_=131072`. All 43 Rust tests
+and 50 desktop/mobile browser tests passed with the setting. Fresh Compose checks
+and standalone/iSpindel/BrewPi/Tilt acceptance passed against the built image.
+The matched memory workload settled at 4.12 MiB Docker-style usage and 10.24 MiB
+process RSS after repeated and concurrent local logins. See MEMORY.md for peaks,
+methodology and limitations. The existing live deployment was not changed.

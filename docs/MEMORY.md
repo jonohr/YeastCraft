@@ -70,11 +70,42 @@ glibc-specific tuning experiment, not a Rust language requirement.
 - The earlier 1.5 MiB cold-start Docker value was not the process's entire resident
   footprint. The new process started around 7.4 MiB RSS. Shared file pages and
   cgroup/cache accounting make these metrics different.
-- Applying the tested allocator override to the standalone image is a reasonable
-  next change, with the normal standalone and authentication regressions checked.
+- The tested allocator setting is now included in the standalone image; see the
+  implementation verification below.
 - Separately review the per-request dummy-hash computation and bound expensive
   password-hash concurrency, preserving unknown-account timing behavior and hash
   strength. A fixed mmap threshold alone does not bound concurrent peak memory.
 
-This investigation changed documentation only. The override was used only in a
-removed test container; it is not enabled in the committed image or production.
+The initial investigation changed documentation only. The follow-up below applies
+the setting to the standalone image. The existing production deployment is unchanged.
+
+## Implemented in the standalone image — 2026-11-17
+
+Dockerfile.rust now sets `MALLOC_MMAP_THRESHOLD_=131072` in the final runtime stage.
+No Compose override is needed. No authentication code, hash strength or server
+startup flags were changed. This targets the pinned Debian/glibc image; it does not
+configure source builds outside that image.
+
+The rebuilt image was tested without an allocator environment override:
+
+| Stage | Docker-style MiB | Process RSS MiB |
+| --- | ---: | ---: |
+| Existing-account login and history retrieval | 1.96 | 8.20 |
+| After 300 synthetic measurements | 4.25 | 10.34 |
+| After ten further serial logins | 3.65 | 9.80 |
+| After four simultaneous logins | 4.21 | 10.24 |
+| Settled | 4.12 | 10.24 |
+
+Peak process RSS during concurrent verification was 85.65 MiB. Working-memory
+peaks still occur while hashing; the change releases those buffers afterward.
+
+Fresh Compose setup/login/logout, account/profile persistence across restart,
+non-root execution and healthcheck passed. The existing standalone, iSpindel,
+BrewPi chamber/SG-profile and Tilt acceptance scripts also passed with their server
+processes run from the actual release image: host emulators communicated over
+loopback, and only temporary test directories were mounted. All test containers
+and temporary databases were removed afterward.
+
+All 43 Rust tests and all 50 desktop/mobile browser tests passed with the same
+allocator variable set for their host test processes. Browser acceptance includes
+local/external authentication, backup/restore, calibration and equipment workflows.
