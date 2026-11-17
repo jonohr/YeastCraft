@@ -1,0 +1,87 @@
+name: Release candidate
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+  sources:
+    name: Corresponding source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install 1.99.1 --profile minimal --no-self-update
+      - name: Package exact committed source and dependencies
+        run: |
+          mkdir -p "$RUNNER_TEMP/sources"
+          python3 scripts/prepare-source-bundle.py "$RUNNER_TEMP/sources/fermentrack-rs-source.tar.gz"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: corresponding-source
+          path: ${{ runner.temp }}/sources/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+  assemble:
+    name: Assemble verified release candidate
+    needs: [ci, sources]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: image-*
+          path: ${{ runner.temp }}/release
+          merge-multiple: true
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: corresponding-source
+          path: ${{ runner.temp }}/release
+      - name: Verify provenance, install instructions and checksums
+        run: python3 scripts/assemble-release.py "$RUNNER_TEMP/release"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: fermentrack-rs-release-candidate
+          path: ${{ runner.temp }}/release/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+  draft:
+    name: Draft tagged release (never auto-publish)
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: assemble
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: fermentrack-rs-release-candidate
+          path: release
+      - name: Create or resume draft with matching sources
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$RELEASE_TAG" --json isDraft > draft.json; then
+            python3 -c 'import json; assert json.load(open("draft.json"))["isDraft"], "Refusing to overwrite a published release"'
+          else
+            gh release create "$RELEASE_TAG" --verify-tag --draft --prerelease --title "Fermentrack RS $RELEASE_TAG" --notes-file release/RELEASE-NOTES.md
+          fi
+          gh release upload "$RELEASE_TAG" release/* --clobber

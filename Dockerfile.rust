@@ -53,6 +53,10 @@ RUN mkdir -p /runtime/usr/share/doc/fermentrack-rs && \
     tar --sort=name --mtime=@0 --owner=0 --group=0 -czf /runtime/usr/share/doc/fermentrack-rs/licenses.tar.gz -C /tmp/rs-licenses .
 
 FROM scratch
+ARG VCS_REF=unknown
+LABEL org.opencontainers.image.source="https://github.com/jonohr/fermentrack-rs" \
+    org.opencontainers.image.revision=$VCS_REF \
+    org.opencontainers.image.licenses="GPL-3.0-only"
 COPY --from=runtime-files /runtime/ /
 WORKDIR /app
 COPY --from=ui /build/ui/dist /app/ui/dist

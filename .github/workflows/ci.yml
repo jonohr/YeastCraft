@@ -1,0 +1,133 @@
+name: CI
+on:
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  checks:
+    name: Rust, browser and emulator checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install 1.99.1 --profile minimal --component clippy --no-self-update
+      - name: Scan committed history for secrets
+        run: >-
+          docker run --rm --network none -v "$PWD:/repo:ro"
+          ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+          git /repo --redact --no-banner
+      - name: Rust tests and lint
+        run: |
+          cargo test --locked --manifest-path rust/Cargo.toml
+          cargo clippy --locked --manifest-path rust/Cargo.toml --all-targets -- -D warnings
+          cargo test --locked --manifest-path tools/ispindel-emulator/Cargo.toml
+          cargo build --locked --manifest-path rust/Cargo.toml
+          cargo build --locked --manifest-path tools/ispindel-emulator/Cargo.toml
+      - name: Frontend and synthetic fixtures
+        run: |
+          npm --prefix ui ci
+          npm --prefix ui run build
+          python3 scripts/make-demo.py fixtures/browser
+          cd ui
+          npx playwright install --with-deps chromium
+      - name: Desktop and mobile workflows
+        run: npm --prefix ui test
+      - name: Standalone and device simulators
+        run: |
+          python3 scripts/verify-standalone.py
+          python3 tools/ispindel-emulator/verify.py
+          python3 tools/brewpi-emulator/verify.py
+          python3 tools/tilt-emulator/verify.py
+      - name: Keep browser diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: browser-diagnostics
+          path: |
+            ui/test-results/
+            state/ui-acceptance/
+          retention-days: 7
+  images:
+    name: Container (${{ matrix.arch }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+          - arch: arm64
+            platform: linux/arm64
+          - arch: armv7
+            platform: linux/arm/v7
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Prepare host test tools
+        run: |
+          rustup toolchain install 1.99.1 --profile minimal --no-self-update
+          cargo build --locked --manifest-path tools/ispindel-emulator/Cargo.toml
+          npm --prefix ui ci
+          npm --prefix ui run build
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
+        with:
+          platforms: arm64,arm
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - name: Build runtime
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: Dockerfile.rust
+          platforms: ${{ matrix.platform }}
+          load: true
+          tags: fermentrack-rs:ci-${{ matrix.arch }}
+          build-args: VCS_REF=${{ github.sha }}
+          cache-from: type=gha,scope=rs-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=rs-${{ matrix.arch }}
+      - name: Fresh installation and all image acceptance suites
+        env:
+          ARCH: ${{ matrix.arch }}
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          python3 scripts/verify-container.py --image "fermentrack-rs:ci-$ARCH" --platform "$PLATFORM"
+          python3 scripts/verify-image.py --image "fermentrack-rs:ci-$ARCH" --platform "$PLATFORM"
+      - name: Scan source and runtime
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: |
+          scripts/security-audit.sh "$RUNNER_TEMP/audit" "fermentrack-rs:ci-$ARCH"
+          python3 scripts/check-security-report.py "$RUNNER_TEMP/audit/source.json" "$RUNNER_TEMP/audit/runtime.json"
+      - name: Package tested image
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: python3 scripts/package-image.py --image "fermentrack-rs:ci-$ARCH" --arch "$ARCH" --output "$RUNNER_TEMP/image-artifacts"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: image-${{ matrix.arch }}
+          path: ${{ runner.temp }}/image-artifacts/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+      - name: Keep security reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: security-${{ matrix.arch }}
+          path: ${{ runner.temp }}/audit/*.json
+          retention-days: 7

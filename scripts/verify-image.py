@@ -6,6 +6,7 @@ Only the test server launch is substituted; emulators and assertions are shared
 with source acceptance. All endpoints/state are disposable and local.
 """
 import argparse
+import os
 import pathlib
 import runpy
 import secrets
@@ -36,6 +37,7 @@ def start(args, *positional, **kwargs):
                     path = path.parent
                 mounts[str(path)] = mounts.get(str(path), False) or flag == '--db'
         cmd = ['docker', 'run', '--rm', '--name', name, '--network', 'host',
+               '--user', f'{os.getuid()}:{os.getgid()}',
                '--read-only', '--cap-drop=ALL', '--security-opt=no-new-privileges', '--memory=256m']
         if options.platform:
             cmd += ['--platform', options.platform]

@@ -91,11 +91,17 @@ with tempfile.TemporaryDirectory(prefix='rs-source-bundle-') as temporary:
     rust = channel['pkg']['rust-src']['target']['*']
     assert '1.99.1' in rust['xz_url'], 'Update source selection alongside the pinned build toolchain'
     download(rust['xz_url'], sources / 'rust' / 'rust-src-1.99.1.tar.xz', rust['xz_hash'])
-    # Versions come from the retained package metadata in the reviewed runtime.
+    # Must match the retained package metadata of every release image.
+    runtime_versions = {
+        'libc6': '2.36-9+deb12u14',
+        'libgcc-s1': '12.2.0-14+deb12u1',
+        'gcc-12-base': '12.2.0-14+deb12u1',
+        'ca-certificates': '20250419~deb12u2',
+    }
     for package, version, directory in [
-        ('glibc', '2.36-9+deb12u14', 'g/glibc'),
-        ('gcc-12', '12.2.0-14+deb12u1', 'g/gcc-12'),
-        ('ca-certificates', '20250419~deb12u2', 'c/ca-certificates'),
+        ('glibc', runtime_versions['libc6'], 'g/glibc'),
+        ('gcc-12', runtime_versions['libgcc-s1'], 'g/gcc-12'),
+        ('ca-certificates', runtime_versions['ca-certificates'], 'c/ca-certificates'),
     ]:
         base = 'https://deb.debian.org/debian/pool/main/' + directory + '/'
         dsc = sources / 'debian' / f'{package}_{version}.dsc'
@@ -119,6 +125,10 @@ with tempfile.TemporaryDirectory(prefix='rs-source-bundle-') as temporary:
                 destination = dsc.parent / filename
                 download(base + filename, destination, digest)
                 assert destination.stat().st_size == int(size)
+    (root / 'RELEASE-SOURCE.json').write_text(json.dumps({
+        'commit': commit, 'runtime_packages': runtime_versions,
+        'rust_toolchain': '1.99.1',
+    }, indent=2) + '\n')
     (root / 'SOURCE-BUNDLE.txt').write_text(
         f'Project commit: {commit}\n'
         f'Locked sources: {len(crates)} Rust crates, {count} npm archives.\n'
