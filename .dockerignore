@@ -1,0 +1,20 @@
+# Only RS build inputs belong in the image build context.
+*
+!Dockerfile.rust
+!LICENSE
+!NOTICE.md
+!LICENSES/
+!LICENSES/**
+!rust/
+!rust/**
+!ui/
+!ui/**
+**/target
+**/node_modules
+**/dist
+**/test-results
+**/state
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+**/*.runtime.*

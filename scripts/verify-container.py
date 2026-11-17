@@ -1,0 +1,75 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
+"""Test the built standalone Compose image in a disposable project and volume."""
+import http.cookiejar
+import json
+from pathlib import Path
+import secrets
+import socket
+import subprocess
+import tempfile
+import time
+import urllib.error
+import urllib.request
+
+ROOT = Path(__file__).resolve().parents[1]
+with tempfile.TemporaryDirectory(prefix='fermentrack-compose-') as temp:
+    folder = Path(temp)
+    (folder / 'private-import').mkdir()
+    with socket.socket() as sock:
+        sock.bind(('127.0.0.1', 0))
+        port = sock.getsockname()[1]
+    config = (ROOT / 'compose.rust.yml').read_text().replace('context: .', f'context: {ROOT}')
+    config = config.replace('127.0.0.1:8315:8315', f'127.0.0.1:{port}:8315')
+    (folder / 'compose.yml').write_text(config)
+    compose = ['docker', 'compose', '-p', 'ferm-fresh-' + secrets.token_hex(4), '-f', str(folder / 'compose.yml')]
+    def docker(*args):
+        return subprocess.run([*compose, *args], check=True, capture_output=True, text=True).stdout
+    base = f'http://127.0.0.1:{port}'
+    client = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+    def api(path, data=None):
+        request = urllib.request.Request(base + '/api/v1/' + path,
+            data=None if data is None else json.dumps(data).encode(),
+            headers={'Content-Type': 'application/json', 'Origin': base})
+        with client.open(request, timeout=10) as response:
+            return json.load(response)
+    def ready():
+        for _ in range(100):
+            try:
+                return api('auth/status')
+            except (OSError, ValueError):
+                time.sleep(.2)
+        raise AssertionError('Container failed to start')
+    try:
+        docker('up', '-d', '--no-build')
+        assert ready()['configured'] is False
+        with urllib.request.urlopen(base) as response:
+            assert b'<html' in response.read()
+        try:
+            api('resources/devices')
+            raise AssertionError('Anonymous access accepted')
+        except urllib.error.HTTPError as error:
+            assert error.code == 401
+        credentials = {'username': 'fresh-install-test', 'password': secrets.token_urlsafe(24)}
+        api('auth/setup', credentials)
+        api('auth/login', credentials)
+        assert api('resources/devices') == []
+        flags = api('diagnostics')
+        assert not any(flags[key] for key in ('collection_enabled', 'control_enabled', 'exports_enabled'))
+        profile = api('resources/profiles', {'name': 'Standalone persistence check', 'data': {
+            'unit': 'C', 'steps': [{'temperature': 18, 'hours': 24, 'transition': 'hold'}]}})
+        docker('restart')
+        assert ready()['configured'] is True
+        api('auth/login', credentials)
+        assert api('resources/profiles/' + profile['id'])['name'] == 'Standalone persistence check'
+        assert docker('exec', '-T', 'fermentrack-rs', 'id', '-u').strip() == '1000'
+        docker('exec', '-T', 'fermentrack-rs', 'fermentrack-rs', 'healthcheck')
+        api('auth/logout', {})
+        try:
+            api('resources/profiles')
+            raise AssertionError('Session survived logout')
+        except urllib.error.HTTPError as error:
+            assert error.code == 401
+        print('PASS: standalone Compose, fresh volume, UI, local setup/login/logout, disabled hardware defaults, persisted account/profile after restart, non-root, healthcheck')
+    finally:
+        docker('down', '--volumes', '--remove-orphans')

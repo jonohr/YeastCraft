@@ -1,0 +1,8 @@
+[
+  {"hours": 0, "angle": 60, "gravity": 1.060, "temperature": 18},
+  {"hours": 12, "angle": 60, "gravity": 1.060, "temperature": 18},
+  {"hours": 48, "angle": 45, "gravity": 1.035, "temperature": 19},
+  {"hours": 96, "angle": 32, "gravity": 1.014, "temperature": 21},
+  {"hours": 144, "angle": 30, "gravity": 1.010, "temperature": 21},
+  {"hours": 192, "angle": 30, "gravity": 1.010, "temperature": 21}
+]

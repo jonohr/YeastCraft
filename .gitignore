@@ -1,0 +1,39 @@
+# Build output and test tooling
+**/target/
+**/node_modules/
+/ui/dist/
+**/test-results/
+/ui/*.tsbuildinfo
+__pycache__/
+*.py[cod]
+.venv/
+.cache/
+.DS_Store
+.idea/
+
+# Private state, histories, fixtures and credentials
+/state/
+/private-import/
+/rust/state/
+/ui/state/
+/fixtures/browser/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3
+*.log
+.env
+.env.*
+*.runtime.*
+
+# Any host-local remnants from the original installation are not source.
+/.envs/
+/data/
+/log/
+/backup_files/
+/collected_static/
+/secretsettings.py
+
+# Local deployment overrides
+/compose.control.yml
+/compose.override.yml
