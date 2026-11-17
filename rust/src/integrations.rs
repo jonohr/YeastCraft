@@ -30,13 +30,13 @@ pub fn payload(target: &Entity, source: &Entity) -> Result<Value> {
     let name = &source.name;
     Ok(match target.data["type"].as_str().unwrap_or("generic") {
         "brewfather" => {
-            json!({"name":name,"report_source":"Fermentrack","temp":temp,"temp_unit":unit,"aux_temp":v["fridge_temp"],"ext_temp":v["room_temp"],"gravity":v["gravity"],"gravity_unit":"G"})
+            json!({"name":name,"report_source":"Fermentrack RS","temp":temp,"temp_unit":unit,"aux_temp":v["fridge_temp"],"ext_temp":v["room_temp"],"gravity":v["gravity"],"gravity_unit":"G"})
         }
         "brewersfriend" => {
-            json!({"name":name,"report_source":"Fermentrack","device_source":source.data["sensor_type"],"temp":temp,"temp_unit":unit,"gravity":v["gravity"],"gravity_unit":"G","battery":v["battery"]})
+            json!({"name":name,"report_source":"Fermentrack RS","device_source":source.data["sensor_type"],"temp":temp,"temp_unit":unit,"gravity":v["gravity"],"gravity_unit":"G","battery":v["battery"]})
         }
         "grainfather" => {
-            json!({"name":format!("{},SG",target.name),"report_source":"Fermentrack","token":"grainfather","ID":0,"angle":0,"battery":v["battery"],"interval":900,"RSSI":v["rssi"],"gravity":v["gravity"],"temperature":temp,"temp_units":unit})
+            json!({"name":format!("{},SG",target.name),"report_source":"Fermentrack RS","token":"grainfather","ID":0,"angle":0,"battery":v["battery"],"interval":900,"RSSI":v["rssi"],"gravity":v["gravity"],"temperature":temp,"temp_units":unit})
         }
         "thingspeak" => {
             json!({"api_key":target.data["api_key"],"field2":name,"field3":unit,"field4":temp,"field5":v["fridge_temp"],"field6":v["room_temp"],"field7":v["gravity"]})
