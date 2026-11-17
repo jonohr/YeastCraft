@@ -23,7 +23,8 @@ physical hardware checks and simulator tests.
 ## Quick start with Docker Compose
 
 Requirements: Docker Engine and Docker Compose v2 on Linux amd64, ARM64 or ARMv7.
-ARM builds have passed emulated acceptance; physical ARM remains unverified. The
+ARM64 has also passed native application acceptance on a Raspberry Pi 5;
+ARM Docker installation and ARMv7 remain verified under emulation. The
 minimal runtime contains no shell or Node. See [container builds](docs/CONTAINER.md).
 From this checkout:
 

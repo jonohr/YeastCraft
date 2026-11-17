@@ -15,7 +15,7 @@ This is an early preview, not a claim of full Fermentrack feature parity.
 | Firmware tools | Not implemented | Flash with existing tools; no firmware binaries included |
 | Exports | Adapter/payload and isolated HTTP tests | Delivery to each external production service not verified |
 | Import/backup | SQLite/CSV fixtures, private legacy parity checks and backup/restore tests | Review warnings; unsupported legacy features remain |
-| Platforms | Linux amd64 native; ARM64 and ARMv7 image builds and acceptance under QEMU | Physical ARM and other operating systems not verified; see [container builds](CONTAINER.md) |
+| Platforms | Linux amd64 native; ARM64 app/libraries native on Raspberry Pi 5; ARM64/ARMv7 Docker under QEMU | Native ARM Docker, physical ARMv7 and other operating systems not verified; see [container builds](CONTAINER.md) |
 
 The original controller firmware controls heating/cooling cycles. Neither a
 simulated chamber nor an empty-fridge test predicts the thermal response of beer.

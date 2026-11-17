@@ -1,0 +1,204 @@
+{
+  "review_date": "2026-11-17",
+  "scope": "amd64, arm64, arm/v7 minimal image; source and ELF import review",
+  "findings": [
+    {
+      "id": "CVE-2010-4756",
+      "assessment": "no-app-call-path-found",
+      "reason": "Affected fopen mode/strfmon/tsearch/DNS-printing/scanf/wide-stream/wordexp/glob/POSIX-regex API is not imported by any release binary. Reviewed app inputs do not invoke it; this is call-path analysis, not a proof about every libc internal path.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2010-4756"
+    },
+    {
+      "id": "CVE-2018-20796",
+      "assessment": "no-app-call-path-found",
+      "reason": "Affected fopen mode/strfmon/tsearch/DNS-printing/scanf/wide-stream/wordexp/glob/POSIX-regex API is not imported by any release binary. Reviewed app inputs do not invoke it; this is call-path analysis, not a proof about every libc internal path.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2018-20796"
+    },
+    {
+      "id": "CVE-2019-1010022",
+      "assessment": "conditional-defense-in-depth",
+      "reason": "Upstream disputes standalone security impact. Stack/ASLR issues require another memory-corruption exploit or knowledge primitive. The ldd scenario requires executing attacker-provided ELF through ldd; runtime ships no ldd or executable-upload workflow. Keep monitored; do not call libc bug-free.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2019-1010022"
+    },
+    {
+      "id": "CVE-2019-1010023",
+      "assessment": "conditional-defense-in-depth",
+      "reason": "Upstream disputes standalone security impact. Stack/ASLR issues require another memory-corruption exploit or knowledge primitive. The ldd scenario requires executing attacker-provided ELF through ldd; runtime ships no ldd or executable-upload workflow. Keep monitored; do not call libc bug-free.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2019-1010023"
+    },
+    {
+      "id": "CVE-2019-1010024",
+      "assessment": "conditional-defense-in-depth",
+      "reason": "Upstream disputes standalone security impact. Stack/ASLR issues require another memory-corruption exploit or knowledge primitive. The ldd scenario requires executing attacker-provided ELF through ldd; runtime ships no ldd or executable-upload workflow. Keep monitored; do not call libc bug-free.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2019-1010024"
+    },
+    {
+      "id": "CVE-2019-1010025",
+      "assessment": "conditional-defense-in-depth",
+      "reason": "Upstream disputes standalone security impact. Stack/ASLR issues require another memory-corruption exploit or knowledge primitive. The ldd scenario requires executing attacker-provided ELF through ldd; runtime ships no ldd or executable-upload workflow. Keep monitored; do not call libc bug-free.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2019-1010025"
+    },
+    {
+      "id": "CVE-2019-9192",
+      "assessment": "no-app-call-path-found",
+      "reason": "Affected fopen mode/strfmon/tsearch/DNS-printing/scanf/wide-stream/wordexp/glob/POSIX-regex API is not imported by any release binary. Reviewed app inputs do not invoke it; this is call-path analysis, not a proof about every libc internal path.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2019-9192"
+    },
+    {
+      "id": "CVE-2022-27943",
+      "assessment": "component-not-shipped",
+      "reason": "Affected libstdc++, libiberty tools or nscd are absent. libgcc_s unwinding support is not libstdc++.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2022-27943"
+    },
+    {
+      "id": "CVE-2026-100290",
+      "assessment": "no-app-call-path-found",
+      "reason": "Affected fopen mode/strfmon/tsearch/DNS-printing/scanf/wide-stream/wordexp/glob/POSIX-regex API is not imported by any release binary. Reviewed app inputs do not invoke it; this is call-path analysis, not a proof about every libc internal path.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-100290"
+    },
+    {
+      "id": "CVE-2026-102010",
+      "assessment": "component-not-shipped",
+      "reason": "Affected libstdc++, libiberty tools or nscd are absent. libgcc_s unwinding support is not libstdc++.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-102010"
+    },
+    {
+      "id": "CVE-2026-114690",
+      "assessment": "component-not-shipped",
+      "reason": "Affected libstdc++, libiberty tools or nscd are absent. libgcc_s unwinding support is not libstdc++.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-114690"
+    },
+    {
+      "id": "CVE-2026-114691",
+      "assessment": "component-not-shipped",
+      "reason": "Affected libstdc++, libiberty tools or nscd are absent. libgcc_s unwinding support is not libstdc++.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-114691"
+    },
+    {
+      "id": "CVE-2026-115456",
+      "assessment": "component-not-shipped",
+      "reason": "Affected libstdc++, libiberty tools or nscd are absent. libgcc_s unwinding support is not libstdc++.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-115456"
+    },
+    {
+      "id": "CVE-2026-115819",
+      "assessment": "no-app-call-path-found",
+      "reason": "Affected fopen mode/strfmon/tsearch/DNS-printing/scanf/wide-stream/wordexp/glob/POSIX-regex API is not imported by any release binary. Reviewed app inputs do not invoke it; this is call-path analysis, not a proof about every libc internal path.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-115819"
+    },
+    {
+      "id": "CVE-2026-125709",
+      "assessment": "component-not-shipped",
+      "reason": "Affected libstdc++, libiberty tools or nscd are absent. libgcc_s unwinding support is not libstdc++.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-125709"
+    },
+    {
+      "id": "CVE-2026-18374",
+      "assessment": "no-app-call-path-found",
+      "reason": "Affected fopen mode/strfmon/tsearch/DNS-printing/scanf/wide-stream/wordexp/glob/POSIX-regex API is not imported by any release binary. Reviewed app inputs do not invoke it; this is call-path analysis, not a proof about every libc internal path.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-18374"
+    },
+    {
+      "id": "CVE-2026-19499",
+      "assessment": "no-app-call-path-found",
+      "reason": "Affected fopen mode/strfmon/tsearch/DNS-printing/scanf/wide-stream/wordexp/glob/POSIX-regex API is not imported by any release binary. Reviewed app inputs do not invoke it; this is call-path analysis, not a proof about every libc internal path.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-19499"
+    },
+    {
+      "id": "CVE-2026-19542",
+      "assessment": "no-app-call-path-found",
+      "reason": "Affected fopen mode/strfmon/tsearch/DNS-printing/scanf/wide-stream/wordexp/glob/POSIX-regex API is not imported by any release binary. Reviewed app inputs do not invoke it; this is call-path analysis, not a proof about every libc internal path.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-19542"
+    },
+    {
+      "id": "CVE-2026-5435",
+      "assessment": "no-app-call-path-found",
+      "reason": "Affected fopen mode/strfmon/tsearch/DNS-printing/scanf/wide-stream/wordexp/glob/POSIX-regex API is not imported by any release binary. Reviewed app inputs do not invoke it; this is call-path analysis, not a proof about every libc internal path.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-5435"
+    },
+    {
+      "id": "CVE-2026-5450",
+      "assessment": "no-app-call-path-found",
+      "reason": "Affected fopen mode/strfmon/tsearch/DNS-printing/scanf/wide-stream/wordexp/glob/POSIX-regex API is not imported by any release binary. Reviewed app inputs do not invoke it; this is call-path analysis, not a proof about every libc internal path.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-5450"
+    },
+    {
+      "id": "CVE-2026-5928",
+      "assessment": "no-app-call-path-found",
+      "reason": "Affected fopen mode/strfmon/tsearch/DNS-printing/scanf/wide-stream/wordexp/glob/POSIX-regex API is not imported by any release binary. Reviewed app inputs do not invoke it; this is call-path analysis, not a proof about every libc internal path.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-5928"
+    },
+    {
+      "id": "CVE-2026-6238",
+      "assessment": "no-app-call-path-found",
+      "reason": "Affected fopen mode/strfmon/tsearch/DNS-printing/scanf/wide-stream/wordexp/glob/POSIX-regex API is not imported by any release binary. Reviewed app inputs do not invoke it; this is call-path analysis, not a proof about every libc internal path.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-6238"
+    },
+    {
+      "id": "CVE-2026-6368",
+      "assessment": "no-app-call-path-found",
+      "reason": "Affected fopen mode/strfmon/tsearch/DNS-printing/scanf/wide-stream/wordexp/glob/POSIX-regex API is not imported by any release binary. Reviewed app inputs do not invoke it; this is call-path analysis, not a proof about every libc internal path.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-6368"
+    },
+    {
+      "id": "CVE-2026-6791",
+      "assessment": "no-app-call-path-found",
+      "reason": "Affected fopen mode/strfmon/tsearch/DNS-printing/scanf/wide-stream/wordexp/glob/POSIX-regex API is not imported by any release binary. Reviewed app inputs do not invoke it; this is call-path analysis, not a proof about every libc internal path.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-6791"
+    },
+    {
+      "id": "CVE-2026-77117",
+      "assessment": "required-data-or-privilege-absent",
+      "reason": "Required Japanese gconv modules/message catalogs or setuid/setgid $ORIGIN execution context are absent. Container is non-root, read-only, drops capabilities and uses no-new-privileges.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-77117"
+    },
+    {
+      "id": "CVE-2026-80489",
+      "assessment": "required-data-or-privilege-absent",
+      "reason": "Required Japanese gconv modules/message catalogs or setuid/setgid $ORIGIN execution context are absent. Container is non-root, read-only, drops capabilities and uses no-new-privileges.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-80489"
+    },
+    {
+      "id": "CVE-2026-84243",
+      "assessment": "required-data-or-privilege-absent",
+      "reason": "Required Japanese gconv modules/message catalogs or setuid/setgid $ORIGIN execution context are absent. Container is non-root, read-only, drops capabilities and uses no-new-privileges.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-84243"
+    },
+    {
+      "id": "CVE-2026-8674",
+      "assessment": "deployment-dependent-open",
+      "reason": "Real resolver call path: getaddrinfo and __res_init are imported. An overlong search domain supplied through resolv.conf/LOCALDOMAIN (including DHCP/VPN-derived configuration) can abort the process. HTTP sensor input cannot set these. Use trusted validated DNS configuration; explicit Compose dns_search: [\".\"] is an option when only FQDN/IP destinations are used. No fixed bookworm package reported; retain as an open availability risk.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-8674"
+    },
+    {
+      "id": "CVE-2026-86805",
+      "assessment": "required-data-or-privilege-absent",
+      "reason": "Required Japanese gconv modules/message catalogs or setuid/setgid $ORIGIN execution context are absent. Container is non-root, read-only, drops capabilities and uses no-new-privileges.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-86805"
+    },
+    {
+      "id": "CVE-2026-89092",
+      "assessment": "component-not-shipped",
+      "reason": "Affected libstdc++, libiberty tools or nscd are absent. libgcc_s unwinding support is not libstdc++.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-89092"
+    },
+    {
+      "id": "CVE-2026-95619",
+      "assessment": "component-not-shipped",
+      "reason": "Affected libstdc++, libiberty tools or nscd are absent. libgcc_s unwinding support is not libstdc++.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-95619"
+    },
+    {
+      "id": "CVE-2026-95818",
+      "assessment": "required-data-or-privilege-absent",
+      "reason": "Required Japanese gconv modules/message catalogs or setuid/setgid $ORIGIN execution context are absent. Container is non-root, read-only, drops capabilities and uses no-new-privileges.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-95818"
+    },
+    {
+      "id": "CVE-2026-97399",
+      "assessment": "other-architecture",
+      "reason": "Affected Power8 routine is not used by amd64, arm64 or arm/v7.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-97399"
+    }
+  ]
+}

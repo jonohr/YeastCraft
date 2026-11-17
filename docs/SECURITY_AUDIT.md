@@ -43,13 +43,13 @@ Databases were retrieved on the review date. Results change as advisories change
 The former critical MiniZip/zlib finding, CVE-2023-45853, was also qualified by
 [Debian's advisory](https://security-tracker.debian.org/tracker/CVE-2023-45853):
 bookworm's zlib package does not build the affected contrib/minizip code. The final
-image does not include zlib at all. Remaining libc/GCC runtime advisories have not
-all received a full call-path exploitability analysis. No suppression file hides them.
+image does not include zlib at all. All remaining unique runtime advisories now have a documented applicability
+assessment in [the triage report](security/TRIAGE.md). A deployment-dependent DNS
+availability risk remains open. No suppression file hides the scanner findings.
 
-Dependency license metadata was inventoried: Cargo/npm package records have license
-fields. This does not replace checking bundled assets, license alternatives and
-source-distribution obligations before publishing. Existing GPL and third-party
-notices are retained; copied Debian libraries include their copyright notices.
+The follow-up [license/content review](LICENSE_REVIEW.md) checks bundled assets,
+license alternatives, complete notices and corresponding-source preparation.
+Publish the matching source bundle with any image release.
 
 ## Verification and reviewed boundaries
 

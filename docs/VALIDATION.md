@@ -76,3 +76,24 @@ fixed findings and remaining medium/low advisories are in SECURITY_AUDIT.md.
 Physical ARM hardware, live deployment and registry publication remain untested
 or unchanged respectively. Earlier memory measurements are historical and were
 not remeasured for this image/authentication change.
+
+## Native ARM64 application acceptance — 2026-11-17
+
+The exact ARM64 release binary and its loader/libraries extracted from the minimal
+image passed all four standalone/iSpindel/BrewPi/Tilt acceptance suites on a physical
+Raspberry Pi 5, Debian 12 aarch64, Python 3.11.2 and a 16 KiB page size. This covers
+local authentication, restart persistence, synthetic ingest/calibration, confirmed
+TCP control and gravity profiles, and experimental Tilt HTTP. The test helper was
+cross-compiled separately; the app was not rebuilt or emulated on the Pi.
+
+The host has no Docker, so this was native application/runtime-library validation,
+not a native Compose/container isolation test. `/proc/PID/maps` verified that all
+loaded shared libraries came from the extracted image. A separate cold healthcheck
+process measured 6,544 KiB RSS; this is not comparable to the loaded x86 memory test.
+No packages/services were installed or changed. Tests ran at low priority using
+only loopback and temporary synthetic databases. The test bundle was removed;
+existing host services remained active and its unrelated workload stayed idle.
+
+The subsequent image update adds compressed license notices only; the runtime
+code and libraries are unchanged. Native ARM Docker, physical ARMv7, USB/Bluetooth
+and complete physical fermentation tests are still outside this evidence.
