@@ -16,17 +16,21 @@ inspection. Compose publishes port 8315 on all IPv4 host interfaces by default;
 The existing allocator setting is retained. This is a smaller disk image, not a
 claim that RAM usage falls by the same percentage.
 
-| Platform | Before, Debian slim | Minimal image | Validation |
-| --- | ---: | ---: | --- |
-| linux/amd64 | 92.29 MB | 12.69 MB | Native x86 Docker |
-| linux/arm64 | 113.90 MB | 11.34 MB | QEMU Docker; native app on Pi 5 |
-| linux/arm/v7 | 69.28 MB | 9.27 MB | QEMU user emulation |
+| Platform     | Before, Debian slim | Minimal image | Validation                      |
+| ------------ | ------------------: | ------------: | ------------------------------- |
+| linux/amd64  |            92.29 MB |      12.69 MB | Native x86 Docker               |
+| linux/arm64  |           113.90 MB |      11.34 MB | QEMU Docker; native app on Pi 5 |
+| linux/arm/v7 |            69.28 MB |       9.27 MB | QEMU user emulation             |
 
 Sizes include the complete compressed dependency notice archive.
 Sizes are Docker image inspect sizes in decimal MB, not compressed registry
 transfer sizes. Native ARM Docker installation, ARMv7 hardware, USB/Bluetooth and power-loss
 behavior remain unverified. ARM64 application acceptance also passed on a physical
 Raspberry Pi 5 with a 16 KiB page size; see VALIDATION.md. No registry image has been published.
+
+CI builds and tests all three platforms and packages their exact images with
+matching source. See [CI and releasing](RELEASING.md) for candidate artifacts,
+draft releases and the separate GHCR publication step.
 
 ## Build locally
 
