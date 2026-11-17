@@ -10,7 +10,8 @@ This is an early preview, not a claim of full Fermentrack feature parity.
 | Timed profiles | Hold/Ramp, scheduling and restart/readback checks, including physical controller trials | No universal thermal-performance claim |
 | Gravity conditions | Threshold/stability, manual/iSpindel separation, persistence and TCP setpoints tested with emulators | Not validated through a complete real fermentation |
 | iSpindel | HTTP ingest, angle/device/server SG, manual references and calibration tests | Simulator acceptance is not complete physical-device certification |
-| Tilt/BLE/TiltBridge | Not implemented | Hardware contributors welcome |
+| Tilt HTTP / legacy TiltBridge | Experimental form/JSON receivers, protocol fixtures and isolated HTTP tests | No physical hardware validation; one color per bridge URL; logging only. See [Tilt](TILT.md) |
+| Direct BLE / TiltBridge 2 Fermentrack target | Not implemented | Hardware contributors welcome |
 | Firmware tools | Not implemented | Flash with existing tools; no firmware binaries included |
 | Exports | Adapter/payload and isolated HTTP tests | Delivery to each external production service not verified |
 | Import/backup | SQLite/CSV fixtures, private legacy parity checks and backup/restore tests | Review warnings; unsupported legacy features remain |

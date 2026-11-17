@@ -6,8 +6,8 @@ readings and runs fermentation profiles. Node.js is needed to build the interfac
 not to run the application.
 
 **Early preview.** Tested with one BrewPi ESP8266 controller running firmware 0.2.4.
-Other hardware combinations need testing. Tilt/BLE and firmware flashing are not
-implemented. See [compatibility](docs/COMPATIBILITY.md) for the distinction between
+Other hardware combinations need testing. Tilt HTTP receivers are experimental;
+direct Bluetooth and firmware flashing are not implemented. See [compatibility](docs/COMPATIBILITY.md) for the distinction between
 physical hardware checks and simulator tests.
 
 ## Features
@@ -15,6 +15,7 @@ physical hardware checks and simulator tests.
 - BrewPi temperature collection and confirmed beer/chamber setpoints over TCP or serial.
 - Timed Hold/Ramp profiles and gravity-based step conditions.
 - iSpindel ingestion, manual gravity readings and calibration from reference samples.
+- Experimental Tilt cloud HTTP and legacy TiltBridge receivers (hardware unverified).
 - Batch history, charts, controller-state bands and a bounded raw protocol log.
 - Local login, SQLite backup/restore and import from legacy Fermentrack SQLite/CSV data.
 - Export adapters, disabled until explicitly configured and enabled.
@@ -77,6 +78,7 @@ installation checks.
 
 - [Installation, enabling equipment, backup and authentication](docs/INSTALLATION.md)
 - [Compatibility and known limitations](docs/COMPATIBILITY.md)
+- [Experimental Tilt HTTP setup and limits](docs/TILT.md)
 - [Standalone validation](docs/VALIDATION.md)
 - [Gravity-controlled profiles](docs/GRAVITY_PROFILES.md)
 - [iSpindel emulator](tools/ispindel-emulator/README.md)

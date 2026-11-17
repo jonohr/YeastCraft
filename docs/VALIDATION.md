@@ -32,3 +32,23 @@ The frontend build currently reports a bundle-size warning for the chart library
 this does not prevent the build or tests from completing.
 
 Reproduction commands are in README.md and CONTRIBUTING.md.
+
+## Experimental Tilt HTTP addition — 2026-11-17
+
+- 43 Rust tests and Clippy with warnings denied passed.
+- 50 browser tests passed across desktop/mobile Chromium, including both Tilt
+  setup flows, first receipt, connection tools, four-decimal SG and overflow checks.
+- Tilt real-HTTP acceptance passed with a disposable locally authenticated server:
+  protocol fixtures, unit conversion, color/MAC/bridge identity, malformed/stale/
+  future packets, content-type/body limits, concurrent retries, restart persistence,
+  UTC-offset changes, token rotation and cross-protocol isolation, manual readings,
+  active/completed batch history, disabled collection and unsupported profile rejection.
+- CLI simulator acceptance included redirect rejection without printing its secret URL.
+- Existing standalone, iSpindel calibration and BrewPi/SG-profile emulator checks passed.
+- Updated Docker image built and fresh Compose account/login/restart/volume checks passed.
+- Mobile and desktop screenshots were inspected; Tilt metrics and graph legends show
+  the supported measurements rather than iSpindel angle/battery-voltage controls.
+
+No physical Tilt, TiltBridge, Bluetooth adapter or production deployment was used.
+HTTP integration is experimental and logging-only, with one selected color per
+legacy bridge receiving URL. Protocol evidence and remaining limits are in TILT.md.

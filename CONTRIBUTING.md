@@ -14,6 +14,7 @@ For isolated controller/gravity testing:
 cargo build --locked --manifest-path tools/ispindel-emulator/Cargo.toml
 python3 tools/ispindel-emulator/verify.py
 python3 tools/brewpi-emulator/verify.py
+python3 tools/tilt-emulator/verify.py
 python3 scripts/verify-standalone.py
 ```
 
