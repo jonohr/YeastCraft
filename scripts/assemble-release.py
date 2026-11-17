@@ -76,13 +76,15 @@ the physical-hardware support described in `docs/COMPATIBILITY.md`.
 Start with `INSTALL.txt`. `SHA256SUMS` covers every supplied asset except itself.
 The full corresponding-source archive accompanies all binary images.
 
-No registry image is published by this workflow. This draft must be reviewed
-before publication, including the security reports and current known limitations.
+This candidate does not publish registry images. Publishing the reviewed GitHub
+release triggers GHCR upload of these exact images, without rebuilding them.
+Review security reports and current known limitations before publishing.
 ''')
 lines = []
 for path in sorted(folder.iterdir()):
     if path.is_file() and path.name != 'SHA256SUMS':
-        digest = hashlib.file_digest(path.open('rb'), 'sha256').hexdigest()
+        with path.open('rb') as stream:
+            digest = hashlib.file_digest(stream, 'sha256').hexdigest()
         lines.append(f'{digest}  {path.name}\n')
 (folder / 'SHA256SUMS').write_text(''.join(lines))
 print(f'Assembled {len(lines)} matching assets for {commit}')
