@@ -115,5 +115,34 @@ local/external authentication, backup/restore, calibration and equipment workflo
 The runtime is now assembled from `scratch` with the required Debian glibc/libgcc
 libraries; the allocator setting is retained. Concurrent password work is capped
 at two operations and dummy-hash construction is cached. The figures above predate
-these changes and have not been remeasured. Smaller image size is not a measurement
+these changes; a matched follow-up is recorded below. Smaller image size is not a measurement
 of lower RAM consumption. See CONTAINER.md and SECURITY_AUDIT.md.
+
+## Matched minimal-image comparison — 2026-11-17
+
+Two runs each used identical copies of a synthetic database (one local account,
+one iSpindel and 1,000 initial measurements), 300 new packets, history retrieval,
+ten serial logins and four synchronized concurrent login attempts. Collection was
+enabled; control and exports were disabled. Containers and databases were disposable.
+
+| Image | Settled process RSS, MiB | Peak process RSS, MiB | Concurrent login responses |
+| --- | ---: | ---: | --- |
+| Previous standalone, allocator tuned | 10.01–10.16 | 85.54–85.58 | Four HTTP 200 |
+| Hardened app, Debian slim | 9.88–10.67 | 47.38–48.18 | Two HTTP 200, two HTTP 429 |
+| Hardened app, scratch | 9.91–10.38 | 47.47–47.99 | Two HTTP 200, two HTTP 429 |
+
+The minimal image showed no meaningful steady-state RAM reduction. The lower
+concurrent peak comes from limiting password hashing to two operations, not from
+removing unused files. Excess attempts are rejected for retry rather than queued;
+the peak comparison therefore does not represent four simultaneously completed
+password checks in the hardened app. Password strength/work factors are unchanged.
+
+Scratch Docker-style usage settled at 3.79–4.25 MiB. The previous image measured
+9.99 MiB on its first run but 4.04 MiB on its second despite near-identical process
+RSS. This is consistent with shared file/page-cache charging differences between
+cgroups; process RSS and anonymous RSS provide the more useful version comparison.
+No caches were flushed and production services were not modified. Two short runs
+are not a long-duration leak test or a guaranteed peak-memory bound.
+
+Sanitized stage measurements and exact image IDs are retained in
+[memory-comparison.json](memory-comparison.json).
