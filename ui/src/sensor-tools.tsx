@@ -617,7 +617,7 @@ function Calibration({
           <p className="muted">
             {points.length} saved calibration points ·{" "}
             {active
-              ? "Calibration active in Fermentrack"
+              ? "Calibration active in Fermentrack RS"
               : "No fitted calibration active"}
           </p>
           <button
@@ -797,7 +797,7 @@ function Calibration({
             <>
               <h3>Use this calibration</h3>
               <p>
-                Fermentrack will use the new formula for future readings. The
+                Fermentrack RS will use the new formula for future readings. The
                 formula inside your physical iSpindel stays as it is.
               </p>
               <div className="calibration-comparison">
@@ -844,7 +844,7 @@ function Calibration({
                       await read();
                       setStep(-1);
                       setMessage(
-                        "Calibration is active in Fermentrack. Check it with a new sample of known SG that was not used for fitting.",
+                        "Calibration is active in Fermentrack RS. Check it with a new sample of known SG that was not used for fitting.",
                       );
                       refresh();
                     } catch (e) {
@@ -856,7 +856,7 @@ function Calibration({
                     }
                   }}
                 >
-                  {busy ? "Activating…" : "Use this calibration in Fermentrack"}
+                  {busy ? "Activating…" : "Use this calibration in Fermentrack RS"}
                 </button>
               </div>
             </>

@@ -3083,3 +3083,53 @@ input[type="checkbox"] {
   border: 1px solid var(--line);
   border-radius: 8px;
 }
+
+/* Fermentrack RS: the original flask, with independent geometric RS lettering. */
+.auth-form-brand { display: none; }
+@media (max-width: 760px) {
+  .auth-form-brand { display: block; margin-bottom: 28px; }
+}
+.brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--brand-ink, var(--ink));
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.brand-lockup .brand-name {
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0.65px;
+}
+.brand-lockup .brand-flask {
+  width: 24px;
+  height: 28px;
+  flex-shrink: 0;
+  color: var(--brand-flask, #223e35);
+}
+.brand-lockup .brand-rs {
+  width: 30px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-left: -3px;
+  color: var(--brand-accent, #a65331);
+}
+.sidebar, .auth-story {
+  --brand-ink: #ffffff;
+  --brand-flask: #b2c79d;
+  --brand-accent: #e9b28b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .topbar {
+    --brand-flask: #b2c79d;
+    --brand-accent: #e9b28b;
+  }
+}
+:root[data-theme="dark"] .topbar {
+  --brand-flask: #b2c79d;
+  --brand-accent: #e9b28b;
+}
+@media (max-width: 480px) {
+  .topbar .workspace-badge { display: none; }
+}

@@ -272,7 +272,7 @@ export default function EquipmentSetup({
                 onChange={(e) => setSgUnit(e.target.value)}
               >
                 <option value="unknown">
-                  Not sure · calibrate in Fermentrack
+                  Not sure · calibrate in Fermentrack RS
                 </option>
                 <option value="SG">SG</option>
                 <option value="Plato">°Plato</option>

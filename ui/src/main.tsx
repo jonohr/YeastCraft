@@ -17,6 +17,7 @@ import { ConfirmationHost } from "./dialogs";
 import { confirmAction } from "./dialogs";
 // SPDX-License-Identifier: GPL-3.0-only
 import ProfileBuilder from "./profile-builder";
+import Brand from "./brand";
 import React, {
   useState,
   useEffect,
@@ -188,7 +189,7 @@ function Auth({
     <main className="auth">
       <section className="auth-story">
         <div className="brand">
-          <FlaskConical /> FERMENTRACK
+          <Brand />
         </div>
         <div>
           <span className="eyebrow">FROM FIRST PITCH TO FINAL GRAVITY</span>
@@ -207,6 +208,7 @@ function Auth({
       </section>
       <section className="auth-form">
         <div className="auth-inner">
+          <div className="auth-form-brand"><Brand /></div>
           <span className="eyebrow">WORKSPACE</span>
           <h2>{configured ? "Welcome back" : "Create your workspace"}</h2>
           <p>
@@ -307,7 +309,7 @@ function Shell({
     <>
       <aside className={menu ? "sidebar open" : "sidebar"}>
         <Link className="brand" to="/">
-          <FlaskConical /> FERMENTRACK
+          <Brand />
         </Link>
         <p className="nav-caption">WORKSPACE</p>
         <nav>
@@ -357,10 +359,8 @@ function Shell({
           >
             <Menu />
           </Button>
-          <span>
-            Fermentrack <span className="muted">/ Workspace</span>
-          </span>
-          <span className="badge">WORKSPACE</span>
+          <Brand />
+          <span className="badge workspace-badge">WORKSPACE</span>
         </header>
         <main className="content">
           <Routes>
@@ -457,7 +457,7 @@ function Heading({
   return (
     <div className="heading">
       <div>
-        <span className="eyebrow">FERMENTRACK</span>
+        <span className="eyebrow">FERMENTRACK RS</span>
         <h1>{title}</h1>
         <p>{subtitle}</p>
       </div>
