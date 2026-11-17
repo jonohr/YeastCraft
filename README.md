@@ -30,6 +30,27 @@ physical hardware checks and simulator tests.
 - Local login, SQLite backup/restore and import from legacy Fermentrack SQLite/CSV data.
 - Export adapters, disabled until explicitly configured and enabled.
 
+## Our experience with memory usage
+
+Low memory usage was a practical motivation for RS. In our own installation,
+the original Fermentrack container used about **490 MiB** in Docker snapshots.
+After switching collection and temperature control to RS, we recorded **2.9 MiB**
+in an early snapshot and **10.5 MiB** in a later one. These are observations from
+our installation, not a matched benchmark or a claim of full feature parity.
+
+In subsequent isolated Linux x86_64 tests of the hardened standalone image,
+RS settled at **9.9–10.4 MiB process RSS** (about **3.8–4.3 MiB** using Docker-style
+accounting) after sensor traffic, history queries and repeated local logins.
+Concurrent password verification briefly reached **47–48 MiB RSS**. These tests
+used synthetic data; they were not a rerun of the original deployment comparison.
+
+The improvement comes from both Rust and a simpler architecture: one server
+process handles the web API, collection and control, without separate Python
+workers, Redis or a Node server. Browser memory is separate and excluded here.
+Docker's memory figure and process RSS measure different things; neither these
+snapshots nor the short tests establish a maximum memory requirement.
+See [measurements, methodology and limitations](docs/MEMORY.md) for details.
+
 ## Quick start with Docker Compose
 
 Requirements: Docker Engine and Docker Compose v2 on Linux amd64, ARM64 or ARMv7.

@@ -1,5 +1,29 @@
 # Memory investigation — 2026-11-17
 
+## Experience from the original installation
+
+Historical operating notes from the migration recorded approximately 490 MiB
+for the original Fermentrack container using `docker stats`. An early RS snapshot
+with collection and temperature control active was 2.9 MiB. A later RS snapshot
+was 10.49 MiB by Docker accounting and 16,672 KiB process RSS (about 16.3 MiB).
+The original application was stopped after the control handover.
+
+These are recorded observations, not new measurements taken for this document.
+They span different application revisions and workloads, without a matched
+request sequence or authentication setup. They describe our experience replacing
+one installation, not a general performance ratio or full functional equivalence.
+The controlled comparisons below compare RS versions with each other, not RS
+against upstream Fermentrack. Server measurements exclude the browser, host-wide
+services and any external authentication provider.
+
+The architectural change matters alongside the implementation language: RS
+combines HTTP serving, collection and control in one Rust process, uses SQLite,
+and does not need separate Python workers, Redis or a Node runtime. Replacing the
+container base with `scratch` reduced image size, but did not meaningfully lower
+steady-state RSS in our matched tests below.
+
+## Investigation scope
+
 The initial fresh-install measurement was not a matched version comparison: it
 compared an instance which had created a local account and logged in against an
 existing production instance using external authentication. Do not attribute that
