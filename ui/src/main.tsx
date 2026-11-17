@@ -2977,6 +2977,29 @@ function SettingsPage({ internalAuth }: { internalAuth: boolean }) {
         </section>
         <WorkspaceLinks />
       </div>
+      <section className="card" aria-labelledby="about-rs-title">
+        <h2 id="about-rs-title">About Fermentrack RS</h2>
+        <p>
+          Fermentrack RS builds on the work of{" "}
+          <a href="https://github.com/thorrak/fermentrack">Fermentrack</a> by
+          John Beeler, Fredrik Steen and contributors. Its ideas, controller
+          integration and legacy data formats provided the foundation for this
+          Rust and React implementation.
+        </p>
+        <p>
+          Controller communication relies on the{" "}
+          <a href="https://github.com/BrewPi">BrewPi</a> ecosystem and its
+          contributors. The flask and interface icons derive from{" "}
+          <a href="https://lucide.dev">Lucide</a> and{" "}
+          <a href="https://feathericons.com">Feather</a>.
+        </p>
+        <p className="muted">
+          An independent project, not an official Fermentrack release. RS code is
+          GPL-3.0-only; upstream projects and dependencies retain their own
+          licenses. Full credits and license texts accompany the source and
+          standalone image in NOTICE.md and LICENSES.
+        </p>
+      </section>
     </>
   );
 }
