@@ -20,6 +20,8 @@ COPY LICENSE NOTICE.md /usr/share/doc/fermentrack-rs/
 COPY LICENSES/ /usr/share/doc/fermentrack-rs/licenses/
 USER fermentrack
 ENV SQLITE_TMPDIR=/app/state
+# Release large temporary password-hashing buffers instead of retaining them in glibc arenas.
+ENV MALLOC_MMAP_THRESHOLD_=131072
 EXPOSE 8315
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 CMD ["fermentrack-rs", "healthcheck"]
 ENTRYPOINT ["fermentrack-rs"]
