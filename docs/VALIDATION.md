@@ -134,10 +134,17 @@ The separate device name was `Fermentrack RS test`: temperature 20.25 C, chamber
 preview, destination activation and the worker's successful HTTP response path
 were exercised. `last_success` matched `last_attempt`; `last_error` was null.
 
-This confirms an HTTP success response, not independent verification of stored
-readings: the worker currently checks HTTP status, not the response body. Account
-display and batch association still need confirmation in Brewfather. No repeated
-15-minute update or long-running export test was performed.
+The owner subsequently supplied a Brewfather Devices screenshot showing Success
+and matching SG 1.042, temperature 20.3 C, room 21.8 C and fridge 19.5 C (rounded
+for display). This confirms receipt and account display. The worker itself checks
+HTTP status, not the response body. No repeated 15-minute update or long-running
+export test was performed; batch association remains a Brewfather user action.
+
+Following that check, export `report_source` now identifies the application as
+`Fermentrack RS` for Brewfather, Brewer's Friend and Grainfather. Brewfather's
+`name` remains the selected controller or sensor name, independent of batch name.
+The screenshot above predates this sender-label change; no new external reading
+was sent for this text-only change.
 
 The disposable container used a fresh tmpfs database, collection/control disabled,
 one export destination and a 24-hour retry interval to limit the test to one
