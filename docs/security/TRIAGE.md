@@ -3,7 +3,8 @@
 All 33 unique CVEs behind the 40 package/advisory pairs were checked against
 Debian's security tracker. The same pairs recur on all three architectures. The
 per-CVE decision, rationale and primary-source link are in `runtime-triage.json`.
-No scanner finding has been hidden or suppressed.
+Runtime findings remain visible in the raw reports. Build-only dependencies have
+a separate [review](BUILD_TOOLS.md).
 
 Evidence: source review, exact image file inventory, retained package metadata,
 ELF dependency/import tables for all three binaries, and upstream/Debian descriptions.
@@ -11,14 +12,14 @@ The three `*-imported-symbols.txt` files record the imported interfaces. Absence
 a direct import alone is not proof about all indirect library behavior; decisions
 also consider the required input, runtime components and privilege context.
 
-| Assessment | Unique CVEs | Meaning |
-| --- | ---: | --- |
-| Component absent | 8 | C++ library, compiler demangler tools or nscd not shipped |
-| No app call path found | 14 | Affected libc APIs not imported; no corresponding app operation found |
-| Required runtime conditions absent | 5 | Missing conversion modules/catalogs or privileged loader context |
-| Different architecture | 1 | Power8-specific implementation, not any supported image architecture |
-| Conditional defense-in-depth | 4 | Disputed standalone impact or prerequisite exploit/executable execution |
-| Deployment-dependent risk remains open | 1 | DNS resolver can abort on an overlong configured search domain |
+| Assessment                             | Unique CVEs | Meaning                                                                 |
+| -------------------------------------- | ----------: | ----------------------------------------------------------------------- |
+| Component absent                       |           8 | C++ library, compiler demangler tools or nscd not shipped               |
+| No app call path found                 |          14 | Affected libc APIs not imported; no corresponding app operation found   |
+| Required runtime conditions absent     |           5 | Missing conversion modules/catalogs or privileged loader context        |
+| Different architecture                 |           1 | Power8-specific implementation, not any supported image architecture    |
+| Conditional defense-in-depth           |           4 | Disputed standalone impact or prerequisite exploit/executable execution |
+| Deployment-dependent risk remains open |           1 | DNS resolver can abort on an overlong configured search domain          |
 
 ## Open availability risk: CVE-2026-8674
 

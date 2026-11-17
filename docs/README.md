@@ -17,12 +17,16 @@ Start with your fridge. Dig into the internals when you need them.
 | Reference                                     | What is inside                                                                  |
 | --------------------------------------------- | ------------------------------------------------------------------------------- |
 | [Containers and ARM](CONTAINER.md)            | Runtime contents, platform builds and emulation                                 |
+| [CI and releasing](RELEASING.md)              | Pull requests, automated checks and release packages                            |
 | [Memory measurements](MEMORY.md)              | Our observations, matched tests and the difference between Docker usage and RSS |
 | [Validation record](VALIDATION.md)            | Dated checks, including fresh installs, simulators and hardware evidence        |
 | [Security policy](../SECURITY.md)             | Deployment guidance and reporting status                                        |
 | [Security review](SECURITY_AUDIT.md)          | Findings, fixes and remaining limits                                            |
 | [Runtime advisory triage](security/TRIAGE.md) | Applicability of individual scanner findings                                    |
 | [License review](LICENSE_REVIEW.md)           | Dependencies, notices and corresponding-source packaging                        |
+
+The [build-tool advisory review](security/BUILD_TOOLS.md) explains the current
+scoped CI exception separately from runtime findings.
 
 ## Help it grow
 
@@ -35,6 +39,6 @@ Planned work lives in [GitHub Issues](https://github.com/jonohr/fermentrack-rs/i
 The [Brewfather integration proposal](https://github.com/jonohr/fermentrack-rs/issues/1)
 is a plan, not a list of features you can use today.
 
-The dated validation and audit documents are evidence of specific checks, not a
+The validation and audit documents describe test coverage and its limits, not a
 promise that every board, firmware or future revision behaves identically. If
 your setup teaches us something new, please bring the details.

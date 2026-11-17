@@ -23,7 +23,8 @@ Checks include:
 - Standalone, iSpindel, BrewPi chamber and Tilt simulator acceptance.
 - Fresh Compose and image acceptance on amd64, ARM64 and ARMv7 (ARM via QEMU).
 - Gitleaks history scanning, Trivy source/runtime reports and a gate on detected
-  secrets, high/critical vulnerabilities and high/critical failed configuration checks.
+  secrets, unreviewed high/critical vulnerabilities and high/critical failed configuration checks.
+  The [picomatch build-only decision](security/BUILD_TOOLS.md) is narrowly scoped and expires.
 - Release assembly checks for missing images, mismatched commits, changed image
   identities and runtime-library/source-version mismatches.
 

@@ -51,24 +51,15 @@ to run it. Your fridge already has enough humming away.
 ## A little less RAM, please
 
 This started partly with a simple wish: the fermentation server should leave some
-RAM for everything else. In our own installation,
-the original Fermentrack container used about **490 MiB** in Docker snapshots.
-After switching collection and temperature control to RS, we recorded **2.9 MiB**
-in an early snapshot and **10.5 MiB** in a later one. These are observations from
-our installation, not a matched benchmark or a claim of full feature parity.
+RAM for everything else. Our original Fermentrack installation used about
+**490 MiB** in Docker snapshots. In isolated tests of the RS standalone runtime,
+process memory settled around **10 MiB RSS** (about **4 MiB** by Docker accounting),
+with temporary peaks around **48 MiB RSS** during concurrent password checks.
 
-In subsequent isolated Linux x86_64 tests of the hardened standalone image,
-RS settled at **9.9–10.4 MiB process RSS** (about **3.8–4.3 MiB** using Docker-style
-accounting) after sensor traffic, history queries and repeated local logins.
-Concurrent password verification briefly reached **47–48 MiB RSS**. These tests
-used synthetic data; they were not a rerun of the original deployment comparison.
-
-The improvement comes from both Rust and a simpler architecture: one server
-process handles the web API, collection and control, without separate Python
-workers, Redis or a Node server. Browser memory is separate and excluded here.
-Docker's memory figure and process RSS measure different things; neither these
-snapshots nor the short tests establish a maximum memory requirement.
-See [measurements, methodology and limitations](docs/MEMORY.md) for details.
+Those are different workloads and different memory metrics, not a head-to-head
+benchmark. The savings come from both Rust and a simpler single-process design.
+Browser memory is separate, and imports or larger workloads can need more RAM.
+[The measurements and their limits →](docs/MEMORY.md)
 
 ## Quick start with Docker Compose
 
@@ -142,6 +133,7 @@ installation checks.
 | Try a Tilt HTTP sender                         | [Experimental Tilt support](docs/TILT.md)                    |
 | Understand the memory numbers                  | [Measurements and methodology](docs/MEMORY.md)               |
 | Build for another machine                      | [Containers and ARM](docs/CONTAINER.md)                      |
+| Understand CI or prepare a release             | [CI and release guide](docs/RELEASING.md)                    |
 | Report a bug, suggest something or lend a hand | [Contributing](CONTRIBUTING.md)                              |
 
 The [documentation index](docs/README.md) also links the test evidence, security

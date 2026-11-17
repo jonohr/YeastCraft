@@ -2,20 +2,20 @@
 
 This is an early preview, not a claim of full Fermentrack feature parity.
 
-| Area | Evidence | Remaining limits |
-| --- | --- | --- |
-| BrewPi TCP | Physical ESP8266 firmware 0.2.4: readings, reconnect, unit checks, setpoints and readback | Other boards/firmware need testing |
-| Pins/probes | Physical GPIO assignment and OneWire edit/remove/install checked on that controller | Wider hardware combinations not verified |
-| Serial | Implemented with exclusive open and protocol tests | USB hardware/reset behavior not physically verified |
-| Timed profiles | Hold/Ramp, scheduling and restart/readback checks, including physical controller trials | No universal thermal-performance claim |
-| Gravity conditions | Threshold/stability, manual/iSpindel separation, persistence and TCP setpoints tested with emulators | Not validated through a complete real fermentation |
-| iSpindel | HTTP ingest, angle/device/server SG, manual references and calibration tests | Simulator acceptance is not complete physical-device certification |
-| Tilt HTTP / legacy TiltBridge | Experimental form/JSON receivers, protocol fixtures and isolated HTTP tests | No physical hardware validation; one color per bridge URL; logging only. See [Tilt](TILT.md) |
-| Direct BLE / TiltBridge 2 Fermentrack target | Not implemented | Hardware contributors welcome |
-| Firmware tools | Not implemented | Flash with existing tools; no firmware binaries included |
-| Exports | Adapter/payload and isolated HTTP tests; Brewfather Custom Stream real-account delivery and displayed values confirmed by owner screenshot | Repeated delivery not yet verified; batch association is configured in Brewfather; other external services unverified |
-| Import/backup | SQLite/CSV fixtures, private legacy parity checks and backup/restore tests | Review warnings; unsupported legacy features remain |
-| Platforms | Linux amd64 native; ARM64 app/libraries native on Raspberry Pi 5; ARM64/ARMv7 Docker under QEMU | Native ARM Docker, physical ARMv7 and other operating systems not verified; see [container builds](CONTAINER.md) |
+| Area                                         | Evidence                                                                                                                                   | Remaining limits                                                                                                      |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| BrewPi TCP                                   | Physical ESP8266 firmware 0.2.4: readings, reconnect, unit checks, setpoints and readback                                                  | Other boards/firmware need testing                                                                                    |
+| Pins/probes                                  | Physical GPIO assignment and OneWire edit/remove/install checked on that controller                                                        | Wider hardware combinations not verified                                                                              |
+| Serial                                       | Implemented with exclusive open and protocol tests                                                                                         | USB hardware/reset behavior not physically verified                                                                   |
+| Timed profiles                               | Hold/Ramp, scheduling and restart/readback checks, including physical controller trials                                                    | No universal thermal-performance claim                                                                                |
+| Gravity conditions                           | Threshold/stability, manual/iSpindel separation, persistence and TCP setpoints tested with emulators                                       | Not validated through a complete real fermentation                                                                    |
+| iSpindel                                     | HTTP ingest, angle/device/server SG, manual references and calibration tests                                                               | Simulator acceptance is not complete physical-device certification                                                    |
+| Tilt HTTP / legacy TiltBridge                | Experimental form/JSON receivers, protocol fixtures and isolated HTTP tests                                                                | No physical hardware validation; one color per bridge URL; logging only. See [Tilt](TILT.md)                          |
+| Direct BLE / TiltBridge 2 Fermentrack target | Not implemented                                                                                                                            | Hardware contributors welcome                                                                                         |
+| Firmware tools                               | Not implemented                                                                                                                            | Flash with existing tools; no firmware binaries included                                                              |
+| Exports                                      | Adapter/payload and isolated HTTP tests; Brewfather Custom Stream real-account delivery and displayed values confirmed by owner screenshot | Repeated delivery not yet verified; batch association is configured in Brewfather; other external services unverified |
+| Import/backup                                | SQLite/CSV fixtures, private legacy parity checks and backup/restore tests                                                                 | Review warnings; unsupported legacy features remain                                                                   |
+| Platforms                                    | Linux amd64 native; ARM64 app/libraries native on Raspberry Pi 5; ARM64/ARMv7 Docker under QEMU                                            | Native ARM Docker, physical ARMv7 and other operating systems not verified; see [container builds](CONTAINER.md)      |
 
 The original controller firmware controls heating/cooling cycles. Neither a
 simulated chamber nor an empty-fridge test predicts the thermal response of beer.

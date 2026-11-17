@@ -43,7 +43,7 @@ sent before a destination is configured and enabled. For Brewfather, the sender
 is **Fermentrack RS** and the device name is the selected controller or sensor name.
 Keep that name stable between batches; associate the device with your batch in
 Brewfather. Synthetic test readings belong in a separate, deliberately chosen test
-device, not your fermentation history. [Brewfather test evidence](VALIDATION.md#brewfather-real-account-export--2026-11-17).
+device, not your fermentation history. [Brewfather test evidence](VALIDATION.md#brewfather-delivery).
 
 Brewfather batch/profile import and gravity synchronization are
 [planned](https://github.com/jonohr/fermentrack-rs/issues/1), not currently available.

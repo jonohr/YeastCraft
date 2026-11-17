@@ -1,95 +1,78 @@
-# Security review — 2026-11-17
+# Security review
 
-Scope: the clean RS source snapshot and locally built standalone images for
-amd64, arm64 and arm/v7. This is an implementation review plus automated scanning
-and regression testing, not an independent penetration test. No production service,
-physical brewing equipment or private runtime database was used.
+Reviewed 2026-11-17. Scope: the RS source, locked dependencies and minimal runtime
+images for amd64, ARM64 and ARMv7. This is an implementation review plus automated
+checks, not an independent penetration test. Deployment guidance and reporting
+status are in [SECURITY.md](../SECURITY.md).
 
-## Changes made
+## Current safeguards
 
-| Finding | Change | Evidence |
-| --- | --- | --- |
-| Unbounded concurrent password work could exhaust a small server | At most two password operations; excess requests return 429. Permits remain owned by blocking work even if a client disconnects | Security regression test for setup, login and password change |
-| Login failure tracking grew with arbitrary usernames | Username length limit and 1,024-entry cap; existing ten-minute expiry retained | Oversized name/map capacity regression test |
-| Dummy password hash was recomputed on every login | Cache it once; still verify an Argon2 hash for unknown users | Known/unknown invalid-login response tests; no weaker password parameters |
-| Anonymous input limits were too broad | 4 KiB setup/login; 64 KiB iSpindel. Existing Tilt limits retained | Oversized HTTP body rejection tests |
-| Missing browser defense headers | Same-origin CSP, frame denial and no-referrer, alongside nosniff and no-store | Header/origin tests and complete browser suite |
-| Empty active batch could be deleted | Reject active-batch deletion in the API and disable it in the interface | Active versus completed batch regression test |
-| Runtime included unrelated operating-system tools and libraries | Scratch final stage with only app, UI, loader/libraries and certificates; preserve package provenance | Fresh installs and full emulator suites on all three architectures |
+| Area                  | Behavior                                                                                                                                |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Password work         | At most two simultaneous hash operations; excess requests receive HTTP 429. Permits remain owned by work even if the client disconnects |
+| Login failures        | Username length limit, 1,024-entry tracking cap and timed lockouts                                                                      |
+| Authentication timing | Cached dummy hash still verified for unknown accounts; password strength is unchanged                                                   |
+| Request size          | 4 KiB for setup/login, 64 KiB for iSpindel, separate bounded Tilt receivers                                                             |
+| Browser               | Same-origin CSP, frame denial, no-referrer, nosniff and no-store headers                                                                |
+| Batch lifecycle       | Active-batch deletion is rejected; finish the batch explicitly                                                                          |
+| Runtime               | Non-root process, minimal libraries, no shell/package manager, read-only root via Compose                                               |
+| Exports               | HTTPS required; redirects rejected                                                                                                      |
+| Import/restore        | Constrained import paths, restore preview and validation; maintenance mode required                                                     |
 
-The password limiter limits expensive work, not total incoming network traffic.
-Use ingress rate limits where public exposure is required. Existing per-username
-lockouts can still be deliberately triggered; this review does not claim DDoS resistance.
+The password limiter bounds expensive work, not all network traffic. Per-user
+lockouts can still be deliberately triggered. A trusted reverse proxy and network
+boundary are needed for remote access; this is not a multi-tenant service or a
+claim of DDoS resistance. Administrators control export destinations and backups
+can contain integration secrets.
 
-## Automated results
+Normal startup makes operational workers available; equipment and destinations
+must still be individually configured. Compose binds to all IPv4 host interfaces
+unless changed. Complete first-account setup on a trusted network, and use HTTPS
+with secure cookies for remote access. See [installation](INSTALLATION.md).
 
-Scanner: Trivy 0.76.2, image
-`aquasec/trivy@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb`.
-Databases were retrieved on the review date. Results change as advisories change.
+## Scan results and reviewed findings
 
-- Source scan: **0 reported vulnerabilities**, **0 secret findings**, **0 reported
-  supported misconfigurations**. Includes both Rust lockfiles and npm development
-  dependencies. Generated output, private state and Git internals are excluded.
-- `npm audit`: **0 reported vulnerabilities**.
-- Each final minimal image: **0 critical, 0 high, 26 medium, 12 low, 2 unknown**
-  package/advisory findings. No fixed version was reported for these findings.
-- Earlier Debian-slim image: 238 findings (1 critical, 37 high, 108 medium,
-  87 low, 5 unknown). Removing unnecessary packages reduced this to 40 per image.
-  Counts are package/advisory pairs, not unique exploitable vulnerabilities.
-- Remaining findings are recorded in [runtime-findings.csv](security/runtime-findings.csv).
-  Debian OS identity and four package records remain detectable in all images.
-  This is not a zero-finding or zero-risk claim.
+CI retains complete source/runtime JSON reports for its exact candidate. The
+scanner is pinned in `scripts/security-audit.sh` (Trivy 0.76.2). Advisory databases
+change independently of the source; use the candidate's reports when releasing.
 
-The former critical MiniZip/zlib finding, CVE-2023-45853, was also qualified by
-[Debian's advisory](https://security-tracker.debian.org/tracker/CVE-2023-45853):
-bookworm's zlib package does not build the affected contrib/minizip code. The final
-image does not include zlib at all. All remaining unique runtime advisories now have a documented applicability
-assessment in [the triage report](security/TRIAGE.md). A deployment-dependent DNS
-availability risk remains open. No suppression file hides the scanner findings.
+- **Source:** one high-severity advisory in the build-only dependency picomatch
+  4.0.7, CVE-2026-112366. No patched release is available at review time. It is not
+  part of the shipped Node-free runtime. The narrowly scoped, expiring CI decision
+  and remaining build-time exposure are in [build-tool review](security/BUILD_TOOLS.md).
+- **Runtime:** the reviewed minimal images have no high/critical findings, with
+  26 medium, 12 low and 2 unknown package/advisory findings. These represent
+  33 unique CVEs, not 40 independently exploitable flaws. Exact findings and
+  applicability are in [runtime triage](security/TRIAGE.md).
+- **Secrets/configuration:** reviewed source scans found no secrets or supported
+  configuration errors. Gitleaks also scans committed history in CI.
 
-The follow-up [license/content review](LICENSE_REVIEW.md) checks bundled assets,
-license alternatives, complete notices and corresponding-source preparation.
-Publish the matching source bundle with any image release.
+The runtime triage includes an open deployment-dependent DNS availability risk.
+Raw scan findings are retained, including the reviewed build-tool exception.
+A passing gate does not mean zero findings or zero risk.
 
-## Verification and reviewed boundaries
+## Verification boundaries
 
-- 48 Rust tests passed; Clippy passed with warnings denied.
-- 50 browser tests passed across desktop/mobile Chromium.
-- Fresh Compose install on amd64, arm64 and arm/v7: first account, authentication,
-  anonymous access rejection, disabled hardware/export defaults, restart persistence,
-  UI delivery, non-root configuration and binary healthcheck.
-- All three images passed standalone, iSpindel calibration, BrewPi/SG profiles and
-  Tilt HTTP acceptance. ARM used QEMU; no physical ARM hardware claim is made.
-- Security tests cover protected endpoints, secure-cookie flags, cross-origin writes,
-  uniform invalid login/SQL-like input, password session revocation and import symlink escape.
-- Query values use bound parameters; reviewed dynamic table names are allowlisted.
-- Import resolves and constrains paths to the configured import root. Restore requires
-  disabled operational workers, preview confirmation and SQLite/entity checks.
-- Exports require HTTPS and disable redirects. Destination selection is a trusted
-  administrator capability; it is not a general SSRF sandbox.
-- The local administrator controls the whole installation. No tenant isolation or
-  granular authorization is promised. First-run setup must remain privately reachable.
-- Backup files can include integration secrets. Firmware, BLE/USB hardware, ingress
-  deployment and network-level flood resistance are outside this validation.
+Security regression checks cover authentication, secure cookies, cross-origin
+writes, invalid-login/SQL-like input, session revocation, request limits and import
+symlink escape. SQL values use bound parameters; dynamic table names are allowlisted.
+Fresh-install and emulator coverage is described in [validation](VALIDATION.md).
+
+Physical USB/Bluetooth, upstream firmware, arbitrary reverse-proxy deployments,
+network flooding and complete hardware certification remain outside this review.
 
 ## Reproduce and maintain
 
-Run `scripts/security-audit.sh /tmp/fermentrack-audit fermentrack-rs:local`, inspect
-both JSON files, and repeat for the ARM tags. The script deliberately reports findings
-without treating scanner exit zero as security approval. Run `npm --prefix ui audit`
-and the test commands in CONTRIBUTING.md. See CONTAINER.md for cross-platform builds
-and emulation. Rebuild/rescan when base images or dependency locks change.
+After building an image:
 
-Before a stable public release, rerun current advisory scans, review remaining
-runtime findings, enable a private vulnerability reporting route and finish the
-license/distribution checklist. No GitHub publication or production update occurred.
+```sh
+scripts/security-audit.sh /tmp/fermentrack-audit fermentrack-rs:local
+python3 scripts/check-security-report.py /tmp/fermentrack-audit/source.json /tmp/fermentrack-audit/runtime.json
+npm --prefix ui audit
+```
 
-## Subsequent default changes — 2026-11-17
-
-Normal startup now enables workers; individual equipment/destination configuration
-still gates actions. Explicit maintenance mode replaces implicitly disabled workers
-for restore and testing. Compose's default port is now reachable on all IPv4 host
-interfaces, with optional loopback binding. First-account setup must take place on
-a trusted network; the default bind is not a LAN firewall. Updated installation
-instructions explain this exposure and the optional private binding. Regression
-evidence is in VALIDATION.md. No claim of changed dependency-CVE counts is made.
+The scan script writes reports; its exit code alone is not an approval. The gate
+rejects high/critical findings except the documented build-only case, and rejects
+secrets and high/critical failed configuration checks. Review all remaining results
+and update dependencies when fixes become available. Source notices and matching
+runtime-library sources must be updated with them; see [license review](LICENSE_REVIEW.md).

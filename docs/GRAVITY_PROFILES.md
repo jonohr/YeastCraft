@@ -9,7 +9,7 @@ temperature; Fermentrack RS changes its target when the current step finishes.
 1. Open **Profiles → Add**. Choose beer or chamber temperature as usual.
 2. Set the first step's target, for example **18 °C**.
 3. Under **Move to next step** (or **Finish this step** for the last step), choose:
-   - **After a duration**: existing timed Hold/Ramp behavior.
+   - **After a duration**: timed Hold/Ramp behavior.
    - **When SG reaches a value**: hold until SG is at or below the threshold.
    - **When SG stays stable**: hold until measurements span the specified hours
      with maximum minus minimum SG within the specified range (default 0.001 SG,
@@ -25,7 +25,7 @@ temperature; Fermentrack RS changes its target when the current step finishes.
 Example: hold 18 °C until SG≤1.020, hold 21 °C until SG is stable for 48 hours,
 then ramp to 7 °C over 24 hours. Completion retains the final target or turns control
 off, according to the explicit choice. Gravity steps use Hold; a following Ramp
-keeps its usual timed meaning. The preview shows step order rather than a fictional
+uses its configured duration. The preview shows step order rather than a fictional
 completion date when gravity conditions make the duration unknown.
 
 ## Reading rules
@@ -65,9 +65,8 @@ are recorded in the audit table; the controller page shows the latest SG evidenc
 and measurement time, current/upcoming/completed steps and waiting status.
 
 Scheduled starts, manual-target cancellation, explicit profile stop and completion
-Off retain their existing semantics. Restore still disables collection/control;
-restored profiles do not gain ownership automatically. Existing time-only profiles
-retain their previous scheduler. No database schema migration or additional runtime
-service is introduced. Confirmation reads are bounded to the latest 10,000 eligible
+Off are supported. Restore still disables collection/control;
+restored profiles do not gain ownership automatically. Time-only profiles use their configured durations. No additional runtime service
+is needed. Confirmation reads are bounded to the latest 10,000 eligible
 observations; exceptionally high-rate/long-window data that cannot prove coverage
 within that bound keeps waiting rather than assuming stability.

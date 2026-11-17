@@ -4,12 +4,10 @@ Scope: the clean RS repository, locked dependencies, shipped artwork and the thr
 minimal runtime images. This is a technical distribution review, not a legal opinion
 about trademarks or every possible downstream use.
 
-## Result and changes
+## Distribution contents
 
 No incompatible mandatory dependency license was identified for this GPL-3.0-only
-project. The earlier metadata-only inventory was insufficient for binary distribution:
-several required dependency copyright/license texts were not included in the image.
-The repository now retains upstream notices for 287 package/toolchain records,
+project. The repository retains upstream notices for 287 package/toolchain records,
 including all locked Rust platforms, installed npm build/test tools and the eleven
 npm production packages. Build-only entries are not claims of runtime inclusion.
 
@@ -68,39 +66,25 @@ When publishing an image, publish its matching source bundle alongside it and li
 both from the same release. Do not publish a binary release first and promise sources
 later. Preserve notices and source access for unchanged third-party code as well.
 Regenerate this inventory/source bundle when locks or toolchain/base versions change.
-The current workflow has no public release URL yet; selecting the repository and
-uploading release assets remain publication steps, not a license incompatibility.
+The [release workflow](RELEASING.md) packages source from the same commit as its
+images and rejects mismatched runtime-library versions before assembling a release.
 
-## Repository-content check
+## Repository contents
 
-Before these additions, Gitleaks scanned all 11 commits (approximately 1.02 MB of
-history) with zero findings. A separate scan of all 161 unique historical blobs
-found no occurrences of the private hostnames/domains, home-directory paths or
-private LAN address pattern checked. Git history starts at the standalone export;
-no original private development history is attached. At the time of that scan,
-no remote was configured; the later private GitHub staging is recorded in
-[validation](VALIDATION.md#github-staging--2026-11-17).
+The repository has its own RS history, without private deployment history,
+measurements or credentials. Tracked artwork, synthetic protocol fixtures,
+source/build instructions and attribution are included. Generated databases,
+build products and private state are ignored.
 
-Tracked artwork, protocol fixtures, source/build instructions and attribution were
-reviewed. Generated state/databases/build products are ignored. The npm manifest's
-`private: true` prevents npm package publishing; it does not prevent source publication.
-Public upstream authorship/contact details in third-party notices are intentional
-attribution, not the installation owner's private data. Repeat the history scan
-on the exact release commit after any later additions.
+CI scans the committed history for secrets on each candidate. Public upstream
+authorship/contact details in notices are intentional attribution. The npm
+manifest's `private: true` prevents npm package publishing; it does not prevent
+source publication.
 
-## Prepared bundle and final checks
+## Release evidence
 
-The source preparation command completed successfully for commit `8f59a8b`. The
-archive contains 205 locked crate sources, 131 npm package archives, eleven original
-production JavaScript source archives, matching Rust library sources and three
-Debian source packages (eight descriptor/source files). Debian source hashes were
-verified again from the finished archive. Artifact name, size and SHA256 are recorded
-in [source-bundle-verification.json](security/source-bundle-verification.json).
-The bundle is prepared locally, not published; regenerate it for the selected
-release commit when publishing later changes.
-
-Final Gitleaks scan at that commit: 15 commits, about 3.64 MB, zero findings.
-The exact dependency texts were checked against their content hashes. All three
-images passed fresh Compose installation after notice packaging. The ARM64 runtime
-binary's SHA256 remains `b99fbbb3e7ec5c816e464f447e63301271ffa77c16576f92ae2a84cb57469340`,
-identical to the binary tested natively on the Raspberry Pi.
+Each candidate includes `release-manifest.json`, per-image provenance, the complete
+source archive and `SHA256SUMS`. Use those receipts for the version being released;
+a locally prepared archive from another commit is not a substitute. GitHub Actions
+artifacts are temporary; published binary releases must retain their matching
+source assets for redistribution.
