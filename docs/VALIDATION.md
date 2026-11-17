@@ -22,7 +22,7 @@ without the private development Git history, runtime database or deployment file
 
 No physical controller or existing production state was used for these checks.
 No GitHub repository or release was created. See COMPATIBILITY.md for hardware
-limits and the known active-batch deletion behavior. These tests do not constitute
+limits. These tests do not constitute
 an independent security audit or certification of additional hardware.
 
 Source review checked the export for private hostnames/paths, key/token patterns,
@@ -61,3 +61,18 @@ and standalone/iSpindel/BrewPi/Tilt acceptance passed against the built image.
 The matched memory workload settled at 4.12 MiB Docker-style usage and 10.24 MiB
 process RSS after repeated and concurrent local logins. See MEMORY.md for peaks,
 methodology and limitations. The existing live deployment was not changed.
+
+## Minimal image, ARM and security review — 2026-11-17
+
+48 Rust tests, Clippy and 50 desktop/mobile browser tests passed after security
+hardening. The final scratch images passed fresh Compose installation and all
+standalone/iSpindel/BrewPi/Tilt acceptance suites on native amd64 and emulated
+ARM64/ARMv7. ARM teardown occasionally logs a Python emulator connection reset
+when the server stops; the behavioral assertions and cleanup still passed.
+
+The runtime contains no shell or package manager; binary healthchecks and restart
+persistence work. Image sizes and reproduction are in CONTAINER.md. Scan results,
+fixed findings and remaining medium/low advisories are in SECURITY_AUDIT.md.
+Physical ARM hardware, live deployment and registry publication remain untested
+or unchanged respectively. Earlier memory measurements are historical and were
+not remeasured for this image/authentication change.

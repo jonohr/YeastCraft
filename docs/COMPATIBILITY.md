@@ -15,7 +15,7 @@ This is an early preview, not a claim of full Fermentrack feature parity.
 | Firmware tools | Not implemented | Flash with existing tools; no firmware binaries included |
 | Exports | Adapter/payload and isolated HTTP tests | Delivery to each external production service not verified |
 | Import/backup | SQLite/CSV fixtures, private legacy parity checks and backup/restore tests | Review warnings; unsupported legacy features remain |
-| Platforms | Linux x86_64 development/runtime testing | ARM images and other operating systems not verified |
+| Platforms | Linux amd64 native; ARM64 and ARMv7 image builds and acceptance under QEMU | Physical ARM and other operating systems not verified; see [container builds](CONTAINER.md) |
 
 The original controller firmware controls heating/cooling cycles. Neither a
 simulated chamber nor an empty-fridge test predicts the thermal response of beer.
@@ -23,11 +23,9 @@ One application must own the controller connection. Operation locks in RS do not
 detect a second application using a Wi-Fi controller.
 
 Known limitations include missing discovery, advanced controller constants,
-firmware flashing, complete legacy API parity and profile interchange. The current
-Delete action is generic: history/references prevent deletion, but an empty active
-batch can still be deleted without stopping controller control. Use **Finish batch**
-and its explicit temperature choice, then archive completed batches. This UX gap
-remains open; deletion must not be interpreted as stopping temperature control.
+firmware flashing, complete legacy API parity and profile interchange. Active batches
+cannot be deleted. Use **Finish batch** and its explicit temperature choice, then
+archive completed batches. Deletion must not be interpreted as stopping temperature control.
 
 Contributors should report exact board, firmware version, transport and observed
 results. Remove tokens, real histories and private addresses from attached logs.

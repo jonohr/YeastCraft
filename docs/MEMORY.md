@@ -109,3 +109,11 @@ and temporary databases were removed afterward.
 All 43 Rust tests and all 50 desktop/mobile browser tests passed with the same
 allocator variable set for their host test processes. Browser acceptance includes
 local/external authentication, backup/restore, calibration and equipment workflows.
+
+## Subsequent minimal runtime and authentication hardening
+
+The runtime is now assembled from `scratch` with the required Debian glibc/libgcc
+libraries; the allocator setting is retained. Concurrent password work is capped
+at two operations and dummy-hash construction is cached. The figures above predate
+these changes and have not been remeasured. Smaller image size is not a measurement
+of lower RAM consumption. See CONTAINER.md and SECURITY_AUDIT.md.

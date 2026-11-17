@@ -38,3 +38,7 @@ This uses a unique Compose project, a random loopback port and a new named volum
 It checks account setup, login/logout, safe defaults, UI delivery, non-root execution,
 healthcheck and account/profile persistence after restart. Its container and volume
 are removed afterward. It never uses an existing installation or proxy credentials.
+
+For all acceptance suites against a built image, run `python3 scripts/verify-image.py`.
+See [CONTAINER.md](docs/CONTAINER.md) for ARM builds and optional QEMU testing, and
+[SECURITY.md](SECURITY.md) for reproducible scans and private reporting guidance.

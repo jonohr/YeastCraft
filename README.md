@@ -22,7 +22,10 @@ physical hardware checks and simulator tests.
 
 ## Quick start with Docker Compose
 
-Requirements: Docker Engine and Docker Compose v2. From this checkout:
+Requirements: Docker Engine and Docker Compose v2 on Linux amd64, ARM64 or ARMv7.
+ARM builds have passed emulated acceptance; physical ARM remains unverified. The
+minimal runtime contains no shell or Node. See [container builds](docs/CONTAINER.md).
+From this checkout:
 
 ```sh
 mkdir -p private-import
@@ -80,6 +83,8 @@ installation checks.
 - [Compatibility and known limitations](docs/COMPATIBILITY.md)
 - [Experimental Tilt HTTP setup and limits](docs/TILT.md)
 - [Standalone validation](docs/VALIDATION.md)
+- [Minimal container and ARM builds](docs/CONTAINER.md)
+- [Security policy](SECURITY.md) and [review results](docs/SECURITY_AUDIT.md)
 - [Gravity-controlled profiles](docs/GRAVITY_PROFILES.md)
 - [iSpindel emulator](tools/ispindel-emulator/README.md)
 - [BrewPi chamber emulator](tools/brewpi-emulator/README.md)

@@ -7,6 +7,8 @@ exposing the app to other machines. Local authentication is the default. First-r
 setup and login must work without any reverse proxy or external identity provider.
 
 Compose builds the source locally; there is no published image registry requirement.
+The minimal runtime supports amd64, ARM64 and ARMv7 (ARM verified under emulation).
+It has no shell or package manager. See [container details](CONTAINER.md).
 `docker compose -f compose.rust.yml down` stops the installation but keeps its named
 database volume. Do not add `-v` unless you intend to delete that installation's data.
 
