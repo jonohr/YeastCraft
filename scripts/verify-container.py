@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 """Test the built standalone Compose image in a disposable project and volume."""
 import http.cookiejar
+import argparse
 import json
 from pathlib import Path
 import secrets
@@ -13,6 +14,13 @@ import urllib.error
 import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--image', default='fermentrack-rs:local')
+parser.add_argument('--platform')
+parser.add_argument('--qemu', type=Path, help='Optional static QEMU user emulator for a foreign architecture')
+args = parser.parse_args()
+if args.qemu:
+    args.qemu = args.qemu.resolve(strict=True)
 with tempfile.TemporaryDirectory(prefix='fermentrack-compose-') as temp:
     folder = Path(temp)
     (folder / 'private-import').mkdir()
@@ -23,6 +31,19 @@ with tempfile.TemporaryDirectory(prefix='fermentrack-compose-') as temp:
     config = config.replace('127.0.0.1:8315:8315', f'127.0.0.1:{port}:8315')
     (folder / 'compose.yml').write_text(config)
     compose = ['docker', 'compose', '-p', 'ferm-fresh-' + secrets.token_hex(4), '-f', str(folder / 'compose.yml')]
+    service = {'image': args.image}
+    if args.platform:
+        service['platform'] = args.platform
+    if args.qemu:
+        service.update({
+            'entrypoint': ['/qemu', '/usr/local/bin/fermentrack-rs'],
+            'command': ['--listen', '0.0.0.0:8315'],
+            'volumes': [f'{args.qemu}:/qemu:ro'],
+            'healthcheck': {'test': ['CMD', '/qemu', '/usr/local/bin/fermentrack-rs', 'healthcheck']},
+        })
+    override = folder / 'override.json'
+    override.write_text(json.dumps({'services': {'fermentrack-rs': service}}))
+    compose += ['-f', str(override)]
     def docker(*args):
         return subprocess.run([*compose, *args], check=True, capture_output=True, text=True).stdout
     base = f'http://127.0.0.1:{port}'
@@ -62,8 +83,11 @@ with tempfile.TemporaryDirectory(prefix='fermentrack-compose-') as temp:
         assert ready()['configured'] is True
         api('auth/login', credentials)
         assert api('resources/profiles/' + profile['id'])['name'] == 'Standalone persistence check'
-        assert docker('exec', '-T', 'fermentrack-rs', 'id', '-u').strip() == '1000'
-        docker('exec', '-T', 'fermentrack-rs', 'fermentrack-rs', 'healthcheck')
+        prefix = ['/qemu'] if args.qemu else []
+        container = docker('ps', '-q', 'fermentrack-rs').strip()
+        user = subprocess.check_output(['docker', 'inspect', '--format', '{{.Config.User}}', container], text=True).strip()
+        assert user == '1000:1000', f'Unexpected runtime user: {user}'
+        docker('exec', '-T', 'fermentrack-rs', *prefix, '/usr/local/bin/fermentrack-rs', 'healthcheck')
         api('auth/logout', {})
         try:
             api('resources/profiles')
@@ -71,5 +95,8 @@ with tempfile.TemporaryDirectory(prefix='fermentrack-compose-') as temp:
         except urllib.error.HTTPError as error:
             assert error.code == 401
         print('PASS: standalone Compose, fresh volume, UI, local setup/login/logout, disabled hardware defaults, persisted account/profile after restart, non-root, healthcheck')
+    except Exception:
+        print(docker('logs', '--tail', '40'))
+        raise
     finally:
         docker('down', '--volumes', '--remove-orphans')
