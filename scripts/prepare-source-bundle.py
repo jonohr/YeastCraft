@@ -16,6 +16,7 @@ import tarfile
 import tempfile
 import tomllib
 import urllib.request
+import urllib.error
 
 ROOT = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser(description=__doc__)
@@ -27,18 +28,24 @@ if output.exists() or output.is_relative_to(ROOT):
 if subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT):
     parser.error('Commit the intended release snapshot first')
 commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
+CACHE = Path(tempfile.gettempdir()) / 'rs-source-downloads'
+CACHE.mkdir(exist_ok=True)
 
 
 def download(url, path, digest=None, algorithm='sha256', encoded=False):
     path.parent.mkdir(parents=True, exist_ok=True)
     value = hashlib.new(algorithm)
-    with urllib.request.urlopen(url, timeout=90) as response, path.open('wb') as target:
+    cached = CACHE / hashlib.sha256(url.encode()).hexdigest()
+    response = cached.open('rb') if cached.exists() else urllib.request.urlopen(url, timeout=90)
+    with response, path.open('wb') as target:
         while chunk := response.read(1024 * 1024):
             value.update(chunk)
             target.write(chunk)
     actual = base64.b64encode(value.digest()).decode() if encoded else value.hexdigest()
     if digest and actual != digest:
         raise RuntimeError(f'Checksum mismatch for {path.name}')
+    if not cached.exists():
+        shutil.copyfile(path, cached)
 
 
 with tempfile.TemporaryDirectory(prefix='rs-source-bundle-') as temporary:
@@ -75,6 +82,9 @@ with tempfile.TemporaryDirectory(prefix='rs-source-bundle-') as temporary:
         filename = location.replace('/', '_') + '-' + package['version'] + '.tgz'
         download(url, sources / 'npm' / filename, digest, algorithm, True)
         count += 1
+    for source in json.loads((root / 'docs/security/npm-upstream-sources.json').read_text()):
+        filename = source['name'].replace('/', '_') + '-' + source['version'] + '.tar.gz'
+        download(source['url'], sources / 'npm-upstream' / filename, source['sha256'])
     rustc = shutil.which('rustc') or str(Path.home() / '.cargo/bin/rustc')
     sysroot = Path(subprocess.check_output([rustc, '--print', 'sysroot'], text=True).strip())
     channel = tomllib.loads((sysroot / 'lib/rustlib/multirust-channel-manifest.toml').read_text())
@@ -89,7 +99,13 @@ with tempfile.TemporaryDirectory(prefix='rs-source-bundle-') as temporary:
     ]:
         base = 'https://deb.debian.org/debian/pool/main/' + directory + '/'
         dsc = sources / 'debian' / f'{package}_{version}.dsc'
-        download(base + dsc.name, dsc)
+        try:
+            download(base + dsc.name, dsc)
+        except urllib.error.HTTPError as error:
+            if error.code != 404:
+                raise
+            base = 'https://security.debian.org/debian-security/pool/updates/main/' + directory + '/'
+            download(base + dsc.name, dsc)
         checksums = False
         for line in dsc.read_text().splitlines():
             if line == 'Checksums-Sha256:':

@@ -1,0 +1,90 @@
+[
+  {
+    "name": "cookie",
+    "version": "1.1.1",
+    "repository": "jshttp/cookie",
+    "commit": "1b89eec4e33256ac31962f4c0d6e711fff478803",
+    "url": "https://codeload.github.com/jshttp/cookie/tar.gz/1b89eec4e33256ac31962f4c0d6e711fff478803",
+    "sha256": "41c90f7c0cfacce662e2e19a8e6327d02b09fa276ba7bbb80d630b5be0bed966"
+  },
+  {
+    "name": "echarts",
+    "version": "6.1.0",
+    "repository": "apache/echarts",
+    "commit": "c5a48f5f97d23e5379720870b8444cd05b50ffb4",
+    "url": "https://codeload.github.com/apache/echarts/tar.gz/c5a48f5f97d23e5379720870b8444cd05b50ffb4",
+    "sha256": "bd0bb9055f85c6997be8b867d00dead92f94229b8db42a035011a334168e6541"
+  },
+  {
+    "name": "lucide-react",
+    "version": "0.468.0",
+    "repository": "lucide-icons/lucide",
+    "commit": "f12b0de177fbc2a6795e99be065887e72b237123",
+    "url": "https://codeload.github.com/lucide-icons/lucide/tar.gz/f12b0de177fbc2a6795e99be065887e72b237123",
+    "sha256": "8d413d4a7caf8827a6f72da0f05aa1103a7179399820ac893758801c2b730af5"
+  },
+  {
+    "name": "react",
+    "version": "19.3.1",
+    "repository": "react/react",
+    "commit": "61aa00df822d0eb76d0362eb8b6fdd3527693efe",
+    "url": "https://codeload.github.com/react/react/tar.gz/61aa00df822d0eb76d0362eb8b6fdd3527693efe",
+    "sha256": "df6b860384f0be8bf6e3ca6ce970226c6be70be2f2cf1cb5ed0c7567b8e4dede"
+  },
+  {
+    "name": "react-dom",
+    "version": "19.3.1",
+    "repository": "react/react",
+    "commit": "61aa00df822d0eb76d0362eb8b6fdd3527693efe",
+    "url": "https://codeload.github.com/react/react/tar.gz/61aa00df822d0eb76d0362eb8b6fdd3527693efe",
+    "sha256": "df6b860384f0be8bf6e3ca6ce970226c6be70be2f2cf1cb5ed0c7567b8e4dede"
+  },
+  {
+    "name": "react-router",
+    "version": "7.18.5",
+    "repository": "remix-run/react-router",
+    "commit": "1ad93b4cb4b045366b7d73639de34787812ad5b5",
+    "url": "https://codeload.github.com/remix-run/react-router/tar.gz/1ad93b4cb4b045366b7d73639de34787812ad5b5",
+    "sha256": "80eb434b9c4cf6d93632dc32216e997e24e85f4695a97b2af0b124dc6a0e8a36"
+  },
+  {
+    "name": "react-router-dom",
+    "version": "7.18.5",
+    "repository": "remix-run/react-router",
+    "commit": "1ad93b4cb4b045366b7d73639de34787812ad5b5",
+    "url": "https://codeload.github.com/remix-run/react-router/tar.gz/1ad93b4cb4b045366b7d73639de34787812ad5b5",
+    "sha256": "80eb434b9c4cf6d93632dc32216e997e24e85f4695a97b2af0b124dc6a0e8a36"
+  },
+  {
+    "name": "scheduler",
+    "version": "0.28.0",
+    "repository": "react/react",
+    "commit": "1d34f91dfde6bba84d08b683aaba164c7194dacb",
+    "url": "https://codeload.github.com/react/react/tar.gz/1d34f91dfde6bba84d08b683aaba164c7194dacb",
+    "sha256": "ef34c2ad2fe4af769cdc8a067d827fbba8fde677d83f5befaa8a8cc5c3a8c6be"
+  },
+  {
+    "name": "set-cookie-parser",
+    "version": "2.7.3",
+    "repository": "nfriedly/set-cookie-parser",
+    "commit": "9327acee17e8fc67e6aada84961009bc696cf02c",
+    "url": "https://codeload.github.com/nfriedly/set-cookie-parser/tar.gz/9327acee17e8fc67e6aada84961009bc696cf02c",
+    "sha256": "0b93e7d8f13daa636c0ccf5b731b42b91ef5278a8647423eeebb4b049f12969b"
+  },
+  {
+    "name": "tslib",
+    "version": "2.3.0",
+    "repository": "Microsoft/tslib",
+    "commit": "0b9301459c223140c9a01b4215cbbc1639a396ca",
+    "url": "https://codeload.github.com/Microsoft/tslib/tar.gz/0b9301459c223140c9a01b4215cbbc1639a396ca",
+    "sha256": "c974a65044d7e24745882e7452e9de27dc0b954ac6cfece51463b7e4a887ac23"
+  },
+  {
+    "name": "zrender",
+    "version": "6.1.0",
+    "repository": "ecomfe/zrender",
+    "commit": "32b6686724832dcea026e9443d056ea216ed0ab2",
+    "url": "https://codeload.github.com/ecomfe/zrender/tar.gz/32b6686724832dcea026e9443d056ea216ed0ab2",
+    "sha256": "5767c553a5e3d914601bd6c50b16edc24981e45a78439f9b3f954403105ee439"
+  }
+]

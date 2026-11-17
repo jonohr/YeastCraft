@@ -7,7 +7,6 @@ covers all locked Rust platforms and installed npm build tools, not only linked 
 """
 import hashlib
 import json
-import os
 from pathlib import Path
 import shutil
 import subprocess
