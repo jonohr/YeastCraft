@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 """Synthetic release assembly tests: no Docker, network or real account needed."""
+from datetime import date
+import runpy
 import hashlib
 import io
 import json
@@ -70,6 +72,18 @@ class ReleaseChecks(unittest.TestCase):
             'manifest.json': [{'Config': 'config.json', 'RepoTags': [f'fermentrack-rs:{COMMIT[:12]}-amd64']}],
             'config.json': b'{}'})
         self.assertNotEqual(self.run_assembly().returncode, 0)
+
+
+class SecurityScopeChecks(unittest.TestCase):
+    def test_review_never_applies_to_runtime_or_fixed_versions(self):
+        review = runpy.run_path(str(ROOT / 'scripts/check-security-report.py'))['reviewed_build_finding']
+        result = {'Target': 'ui/package-lock.json', 'Type': 'npm'}
+        finding = {'VulnerabilityID': 'CVE-2026-112366', 'PkgName': 'picomatch', 'InstalledVersion': '4.0.7'}
+        self.assertTrue(review({'ArtifactType': 'repository'}, result, finding, date(2026, 11, 17)))
+        self.assertFalse(review({'ArtifactType': 'container_image'}, result, finding, date(2026, 11, 17)))
+        self.assertFalse(review({'ArtifactType': 'repository'}, result, finding, date(2026, 12, 18)))
+        self.assertFalse(review({'ArtifactType': 'repository'}, result, {**finding, 'FixedVersion': '4.0.8'}, date(2026, 11, 17)))
+        self.assertFalse(review({'ArtifactType': 'repository'}, result, {**finding, 'VulnerabilityID': 'OTHER'}, date(2026, 11, 17)))
 
 
 if __name__ == '__main__':
