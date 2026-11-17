@@ -58,7 +58,8 @@ and exact package provenance. Compression keeps the minimal image small.
 ## Corresponding source at release time
 
 `scripts/prepare-source-bundle.py OUTPUT.tar.gz` packages a committed snapshot plus
-all locked Cargo/npm source archives, matching Rust library sources and original
+all locked Cargo/npm package archives, original upstream source revisions for the
+eleven production JavaScript dependencies, matching Rust library sources and original
 Debian glibc/GCC/CA source packages. Registry archives are verified against lockfile
 checksums; Rust against its toolchain manifest; Debian against source descriptors.
 The output is outside the checkout and is never uploaded by the script.

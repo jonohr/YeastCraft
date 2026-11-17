@@ -14,10 +14,11 @@ claim that RAM usage falls by the same percentage.
 
 | Platform | Before, Debian slim | Minimal image | Validation |
 | --- | ---: | ---: | --- |
-| linux/amd64 | 92.29 MB | 12.49 MB | Native x86 Docker |
-| linux/arm64 | 113.90 MB | 11.14 MB | QEMU Docker; native app on Pi 5 |
-| linux/arm/v7 | 69.28 MB | 9.07 MB | QEMU user emulation |
+| linux/amd64 | 92.29 MB | 12.69 MB | Native x86 Docker |
+| linux/arm64 | 113.90 MB | 11.34 MB | QEMU Docker; native app on Pi 5 |
+| linux/arm/v7 | 69.28 MB | 9.27 MB | QEMU user emulation |
 
+Sizes include the complete compressed dependency notice archive.
 Sizes are Docker image inspect sizes in decimal MB, not compressed registry
 transfer sizes. Native ARM Docker installation, ARMv7 hardware, USB/Bluetooth and power-loss
 behavior remain unverified. ARM64 application acceptance also passed on a physical
