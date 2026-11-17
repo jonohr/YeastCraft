@@ -48,13 +48,15 @@ RUN set -eu; \
     printf 'fermentrack:x:1000:\n' > /runtime/etc/group; \
     printf 'hosts: files dns\n' > /runtime/etc/nsswitch.conf; \
     chown -R 1000:1000 /runtime/app
+COPY LICENSES/ /tmp/rs-licenses/
+RUN mkdir -p /runtime/usr/share/doc/fermentrack-rs && \
+    tar --sort=name --mtime=@0 --owner=0 --group=0 -czf /runtime/usr/share/doc/fermentrack-rs/licenses.tar.gz -C /tmp/rs-licenses .
 
 FROM scratch
 COPY --from=runtime-files /runtime/ /
 WORKDIR /app
 COPY --from=ui /build/ui/dist /app/ui/dist
 COPY LICENSE NOTICE.md /usr/share/doc/fermentrack-rs/
-COPY LICENSES/ /usr/share/doc/fermentrack-rs/licenses/
 USER 1000:1000
 ENV SQLITE_TMPDIR=/app/state
 # Release large temporary password-hashing buffers instead of retaining them in glibc arenas.

@@ -18,3 +18,18 @@ and Cargo/npm lockfiles identify the dependency versions.
 This public-source snapshot starts with its own history. It excludes private
 operational records and deployment history. Upstream reference material is available
 from the original project, rather than from nonexistent commits in this repository.
+
+## Dependency notices and source
+
+Dependency copyright and license texts are indexed in `LICENSES/third-party/README.md`
+and `inventory.json`. The standalone image carries them in
+`/usr/share/doc/fermentrack-rs/licenses.tar.gz`. Runtime library notices are also under
+`/usr/share/doc/`. Dependency code is not relicensed indiscriminately by this notice.
+
+The unchanged MPL-2.0-covered serialport 4.10.1 code is additionally available under
+GPL-3.0-only as part of this GPLv3 Larger Work under MPL section 3.3; its MPL rights
+and notices remain available. Its exact source is listed in the inventory and
+included in the corresponding-source bundle prepared for image releases.
+
+Binary releases must be accompanied by the matching source bundle described in
+`docs/LICENSE_REVIEW.md`, including the dependency and copied runtime-library sources.
