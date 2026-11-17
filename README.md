@@ -5,6 +5,12 @@ SQLite and a React interface. One server process serves the interface, collects
 readings and runs fermentation profiles. Node.js is needed to build the interface,
 not to run the application.
 
+Built on the work of [Fermentrack](https://github.com/thorrak/fermentrack) by
+**John Beeler, Fredrik Steen and contributors**, and the
+[BrewPi community](https://github.com/BrewPi). Their ideas, controller integration
+and legacy data formats provided the foundation for RS. This is an independent
+project, not an official Fermentrack release. See [full attribution](NOTICE.md).
+
 **Early preview.** Tested with one BrewPi ESP8266 controller running firmware 0.2.4.
 Other hardware combinations need testing. Tilt HTTP receivers are experimental;
 direct Bluetooth and firmware flashing are not implemented. See [compatibility](docs/COMPATIBILITY.md) for the distinction between
