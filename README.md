@@ -1,3 +1,16 @@
+<p align="center">
+  <img src="design/brand/wordmark-forest.svg" alt="Fermentrack RS" width="560">
+</p>
+
+<p align="center"><strong>Let the yeast work. Give the fridge a plan.</strong></p>
+
+<p align="center">
+  <a href="#quick-start-with-docker-compose">Get started</a> ·
+  <a href="docs/COMPATIBILITY.md">Supported equipment</a> ·
+  <a href="docs/README.md">Guides</a> ·
+  <a href="https://github.com/jonohr/fermentrack-rs/issues">Ideas &amp; issues</a>
+</p>
+
 # Fermentrack RS
 
 An independent Rust rewrite of Fermentrack, with a redesigned interface,
@@ -9,18 +22,24 @@ Built on the work of [Fermentrack](https://github.com/thorrak/fermentrack) by
 and legacy data formats provided the foundation for RS. This is an independent
 project, not an official Fermentrack release. See [full attribution](NOTICE.md).
 
-One Rust server process serves the React interface, collects readings and runs
-fermentation profiles, with SQLite for storage. Node.js is needed to build the
-interface, not to run the application.
+RS gives your fermentation chamber a plan: hold a temperature, follow a schedule,
+or move to the next step when gravity measurements meet your conditions. Check
+progress from your phone or desktop, and let the controller handle the heating
+and cooling cycles.
 
-**Early preview.** Tested with one BrewPi ESP8266 controller running firmware 0.2.4.
-Other hardware combinations need testing. Tilt HTTP receivers are experimental;
-direct Bluetooth and firmware flashing are not implemented. See [compatibility](docs/COMPATIBILITY.md) for the distinction between
-physical hardware checks and simulator tests.
+Under the hood, one Rust process serves the interface, collects readings and runs
+profiles, with SQLite for storage. Node.js is needed to build the interface, not
+to run it. Your fridge already has enough humming away.
 
-**Why RS?** Rust, with a nod to *Rennsport* — a lighter, leaner take on fermentation control.
+> **Early preview — a small project with a real fridge behind it.** Physical
+> controller testing so far covers one BrewPi ESP8266 running firmware 0.2.4.
+> Other combinations need help from people who own them. Tilt HTTP is experimental;
+> direct Bluetooth and firmware flashing are not implemented.
+> [What we have tested, and what we have not →](docs/COMPATIBILITY.md)
 
-## Features
+**Why RS?** Rust, with a nod to _Rennsport_ — a lighter, leaner take on fermentation control.
+
+## What you can do
 
 - BrewPi temperature collection and confirmed beer/chamber setpoints over TCP or serial.
 - Timed Hold/Ramp profiles and gravity-based step conditions.
@@ -28,11 +47,13 @@ physical hardware checks and simulator tests.
 - Experimental Tilt cloud HTTP and legacy TiltBridge receivers (hardware unverified).
 - Batch history, charts, controller-state bands and a bounded raw protocol log.
 - Local login, SQLite backup/restore and import from legacy Fermentrack SQLite/CSV data.
-- Export adapters, disabled until explicitly configured and enabled.
+- Send readings to Brewfather; other export adapters are implemented but need real-service testing.
+  Destinations send nothing until you configure and enable them.
 
-## Our experience with memory usage
+## A little less RAM, please
 
-Low memory usage was a practical motivation for RS. In our own installation,
+This started partly with a simple wish: the fermentation server should leave some
+RAM for everything else. In our own installation,
 the original Fermentrack container used about **490 MiB** in Docker snapshots.
 After switching collection and temperature control to RS, we recorded **2.9 MiB**
 in an early snapshot and **10.5 MiB** in a later one. These are observations from
@@ -57,9 +78,11 @@ Requirements: Docker Engine and Docker Compose v2 on Linux amd64, ARM64 or ARMv7
 ARM64 has also passed native application acceptance on a Raspberry Pi 5;
 ARM Docker installation and ARMv7 remain verified under emulation. The
 minimal runtime contains no shell or Node. See [container builds](docs/CONTAINER.md).
-From this checkout:
+Clone the repository, then build and start it:
 
 ```sh
+git clone https://github.com/jonohr/fermentrack-rs.git
+cd fermentrack-rs
 mkdir -p private-import
 docker compose -f compose.rust.yml up -d --build
 ```
@@ -82,7 +105,7 @@ use HTTPS with authentication for remote access.
 If you prefer access only through a local proxy or SSH tunnel, put
 `FERMENTRACK_BIND_ADDRESS=127.0.0.1` in a local `.env` file beside Compose.
 See [network and authentication options](docs/INSTALLATION.md#network-access-and-authentication).
-The standalone installation does not require Authentik, a proxy proof or another service.
+The default installation works on its own; no external login service is required.
 
 ## Build and test from source
 
@@ -111,17 +134,30 @@ Browser tests use a temporary database and loopback port 8316. They do not requi
 brewery hardware. [CONTRIBUTING.md](CONTRIBUTING.md) describes simulator and clean
 installation checks.
 
-## Documentation
+## Where next?
 
-- [Installation, enabling equipment, backup and authentication](docs/INSTALLATION.md)
-- [Compatibility and known limitations](docs/COMPATIBILITY.md)
-- [Experimental Tilt HTTP setup and limits](docs/TILT.md)
-- [Standalone validation](docs/VALIDATION.md)
-- [Minimal container and ARM builds](docs/CONTAINER.md)
-- [Security policy](SECURITY.md) and [review results](docs/SECURITY_AUDIT.md)
-- [Gravity-controlled profiles](docs/GRAVITY_PROFILES.md)
-- [iSpindel emulator](tools/ispindel-emulator/README.md)
-- [BrewPi chamber emulator](tools/brewpi-emulator/README.md)
+| If you want to…                                | Start here                                                   |
+| ---------------------------------------------- | ------------------------------------------------------------ |
+| Connect a fridge, sensor or export             | [Installation and everyday operations](docs/INSTALLATION.md) |
+| Check your equipment before installing         | [Compatibility](docs/COMPATIBILITY.md)                       |
+| Let gravity decide the next step               | [Gravity-controlled profiles](docs/GRAVITY_PROFILES.md)      |
+| Try a Tilt HTTP sender                         | [Experimental Tilt support](docs/TILT.md)                    |
+| Understand the memory numbers                  | [Measurements and methodology](docs/MEMORY.md)               |
+| Build for another machine                      | [Containers and ARM](docs/CONTAINER.md)                      |
+| Report a bug, suggest something or lend a hand | [Contributing](CONTRIBUTING.md)                              |
+
+The [documentation index](docs/README.md) also links the test evidence, security
+review and licensing details.
+
+## What is brewing next?
+
+Brewfather export already delivers readings. Next, we would like to bring a batch's
+fermentation plan and manual gravity readings back into RS, so you can plan in
+Brewfather and let RS run the chamber. That is **planned, not implemented**:
+[follow the integration proposal](https://github.com/jonohr/fermentrack-rs/issues/1).
+
+Found a rough edge? Have equipment we have not tried? [Open an issue](https://github.com/jonohr/fermentrack-rs/issues).
+A clear description or a careful hardware test is just as welcome as code.
 
 ## License and attribution
 

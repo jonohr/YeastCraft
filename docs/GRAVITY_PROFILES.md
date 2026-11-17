@@ -1,7 +1,8 @@
 # Gravity-controlled fermentation profiles
 
-Implemented 2026-11-14. The controller still regulates temperature. Fermentrack
-changes its target when the current profile step finishes.
+Sometimes the yeast does not follow the calendar. Gravity conditions let a profile
+wait for measurements before changing temperature. The controller still regulates
+temperature; Fermentrack RS changes its target when the current step finishes.
 
 ## Create a profile
 
@@ -11,7 +12,7 @@ changes its target when the current profile step finishes.
    - **After a duration**: existing timed Hold/Ramp behavior.
    - **When SG reaches a value**: hold until SG is at or below the threshold.
    - **When SG stays stable**: hold until measurements span the specified hours
-     with maximum minus minimum SG within the specified range (default0.001 SG,
+     with maximum minus minimum SG within the specified range (default 0.001 SG,
      editable under **Advanced**).
 4. In the same step card, choose **Manual measurements** or **iSpindel**, then
    the gravity sensor containing those readings. A manual measurement can be
@@ -21,8 +22,8 @@ changes its target when the current profile step finishes.
    never starts control. The review/start action enables the selected profile;
    there is no separate controller-ownership checkbox.
 
-Example: hold18 °C until SG≤1.020, hold21 °C until SG is stable for48 hours,
-then ramp to7 °C over24 hours. Completion retains the final target or turns control
+Example: hold 18 °C until SG≤1.020, hold 21 °C until SG is stable for 48 hours,
+then ramp to 7 °C over 24 hours. Completion retains the final target or turns control
 off, according to the explicit choice. Gravity steps use Hold; a following Ramp
 keeps its usual timed meaning. The preview shows step order rather than a fictional
 completion date when gravity conditions make the duration unknown.
@@ -31,13 +32,13 @@ completion date when gravity conditions make the duration unknown.
 
 - A **single new manual reading** can satisfy the SG threshold. Stability requires
   at least two readings whose timestamps cover the period. The latest manual
-  reading must be no older than24 hours when evaluated.
+  reading must be no older than 24 hours when evaluated.
 - **iSpindel requires at least three distinct measurement times spanning at least
   ten minutes**. Every value in the confirming interval must satisfy the condition.
   Stability also requires coverage of the full selected duration. The newest value
-  must be at most30 minutes old; a gap over30 minutes resets confirmation.
+  must be at most 30 minutes old; a gap over 30 minutes resets confirmation.
 - Automatic control uses the SG calculation selected for that sensor (device SG
-  or Fermentrack calibration). Invalid/missing SG and changes in calibration ID or
+  or Fermentrack RS calibration). Invalid/missing SG and changes in calibration ID or
   SG source break the confirming series. Old values from a previous calculation
   do not trigger a transition before new values from the active calculation arrive.
 - Only readings **after the current step started** are eligible. Preexisting
@@ -45,8 +46,13 @@ completion date when gravity conditions make the duration unknown.
   another step. Duplicate timestamps do not count as independent observations.
 - Missing/stale/insufficient readings keep the current target and show the profile
   waiting. There is no automatic time-based fallback. Evaluation occurs on the
-  existing collector cycle (normally30 seconds), not synchronously in the form save.
+  existing collector cycle (normally 30 seconds), not synchronously in the form save.
 - Stability is a measurement condition, not a guarantee of fermentation completion.
+
+For now, automatic SG conditions require the iSpindel freshness and confirmation
+windows above. A sensor waking only once an hour can still log readings, but will
+not satisfy those automatic conditions. Battery-friendly intervals and Brewfather
+manual-reading import are part of the [planned integration work](https://github.com/jonohr/fermentrack-rs/issues/1).
 
 ## Persistence and visibility
 
@@ -62,6 +68,6 @@ Scheduled starts, manual-target cancellation, explicit profile stop and completi
 Off retain their existing semantics. Restore still disables collection/control;
 restored profiles do not gain ownership automatically. Existing time-only profiles
 retain their previous scheduler. No database schema migration or additional runtime
-service is introduced. Confirmation reads are bounded to the latest10000 eligible
+service is introduced. Confirmation reads are bounded to the latest 10,000 eligible
 observations; exceptionally high-rate/long-window data that cannot prove coverage
 within that bound keeps waiting rather than assuming stability.

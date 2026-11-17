@@ -1,12 +1,35 @@
 # Contributing
 
-This project is an early preview. Small fixes, reproducible bug reports and hardware
-test results are welcome. Include controller board/firmware and distinguish simulator
-results from physical-device behavior. Do not attach credentials or brewery histories.
+You do not need a Rust compiler to help. A confusing screen, a reproducible bug or
+results from a controller we have not tried can all make RS better. This is a small,
+early project; thank you for taking a look.
+
+## Start with an issue
+
+- **Something broke?** Tell us what you expected, what happened, your RS revision,
+  installation method and steps to reproduce it. For hardware, include the board,
+  firmware and connection type.
+- **Have an idea?** Describe the brewing problem you want to solve. A concrete
+  example is more useful than a long feature list.
+- **Tried new equipment?** Tell us what you physically checked, and what you only
+  simulated. Successful tests and awkward surprises are both useful.
+
+[Open an issue](https://github.com/jonohr/fermentrack-rs/issues), or join an existing
+one. For larger changes, agree on the scope there before spending a weekend on it.
+Keep tokens, receiving URLs, databases and private brewery histories out of reports.
+For vulnerabilities, follow [the security reporting guidance](SECURITY.md).
+
+## Working on the code
+
+Keep changes focused and explain what changed and how you checked it. Link the
+relevant issue in your pull request. Preserve attribution and license notices;
+small, reviewable contributions are easier to get over the finish line.
 
 Use the source-build and test commands in README.md. The npm lockfile supplies the
 browser test runner; no host-global npm packages or private tooling are required.
 The build is served by the Rust process; Node is not a production dependency.
+
+## Test without borrowing the fridge
 
 For isolated controller/gravity testing:
 
@@ -26,6 +49,8 @@ a disposable stopped test instance, never by changing the production clock.
 Keep GPL-3.0-only headers on new source and preserve third-party notices. Test UI
 changes on desktop and mobile. Firmware and Tilt contributions require explicit
 hardware evidence before being described as supported.
+
+## Check a fresh installation
 
 For a completely fresh container installation (requires Docker Compose):
 

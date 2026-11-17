@@ -1,10 +1,13 @@
-# Installation and operations
+# From first start to first fermentation
+
+This guide gets RS talking to your equipment, then covers the everyday jobs:
+backups, updates and figuring out what the controller just said.
 
 ## First start
 
-Use the Docker Compose command in README.md. Open `http://SERVER-IP:8315` on
+Use the [Docker Compose quick start](../README.md#quick-start-with-docker-compose). Open `http://SERVER-IP:8315` on
 your trusted local network and create the administrator account. Local authentication is the default. First-run
-setup and login must work without any reverse proxy or external identity provider.
+setup and login work without a reverse proxy or external identity provider.
 
 Compose builds the source locally; there is no published image registry requirement.
 The minimal runtime supports amd64, ARM64 and ARMv7 (ARM Docker verified under emulation; ARM64 app also tested natively on Pi 5).
@@ -36,8 +39,14 @@ separate reachable ingest path for sensors; do not disable authentication for th
 whole application. The sensor token authenticates ingest requests.
 
 For exports, configure and explicitly enable a destination in the app. Nothing is
-sent before a destination is configured and enabled. Do not use a real destination
-for test payloads.
+sent before a destination is configured and enabled. For Brewfather, the sender
+is **Fermentrack RS** and the device name is the selected controller or sensor name.
+Keep that name stable between batches; associate the device with your batch in
+Brewfather. Synthetic test readings belong in a separate, deliberately chosen test
+device, not your fermentation history. [Brewfather test evidence](VALIDATION.md#brewfather-real-account-export--2026-11-17).
+
+Brewfather batch/profile import and gravity synchronization are
+[planned](https://github.com/jonohr/fermentrack-rs/issues/1), not currently available.
 
 ## Network access and authentication
 
@@ -65,7 +74,7 @@ cross-origin writes are refused. Do not enable secure cookies for plain HTTP.
 
 Local login can stay enabled behind a proxy. Optional proxy-only authentication
 uses `--disable-internal-auth --proxy-proof-file /run/secrets/proxy-proof`.
-The proof file must contain64 hexadecimal characters. The proxy must authenticate
+The proof file must contain 64 hexadecimal characters. The proxy must authenticate
 the user, overwrite `X-Fermentrack-Proxy-Proof` with that secret and prevent direct
 untrusted access to the upstream. Merely sending identity headers is insufficient.
 Store proof files outside source control. The optional external logout path currently

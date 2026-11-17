@@ -77,7 +77,9 @@ Before these additions, Gitleaks scanned all 11 commits (approximately 1.02 MB o
 history) with zero findings. A separate scan of all 161 unique historical blobs
 found no occurrences of the private hostnames/domains, home-directory paths or
 private LAN address pattern checked. Git history starts at the standalone export;
-no original private development history is attached and no remote is configured.
+no original private development history is attached. At the time of that scan,
+no remote was configured; the later private GitHub staging is recorded in
+[validation](VALIDATION.md#github-staging--2026-11-17).
 
 Tracked artwork, protocol fixtures, source/build instructions and attribution were
 reviewed. Generated state/databases/build products are ignored. The npm manifest's

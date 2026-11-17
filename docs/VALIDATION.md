@@ -1,5 +1,10 @@
 # Standalone validation
 
+This is a dated engineering record. For setup instructions, start with
+[installation](INSTALLATION.md); for the current support summary, see
+[compatibility](COMPATIBILITY.md). Later sections record changes that supersede
+earlier defaults and test counts.
+
 Verified on 2026-11-17 on Linux x86_64. This repository was assembled from source
 without the private development Git history, runtime database or deployment files.
 
@@ -153,3 +158,13 @@ The live RS installation, controller and existing batch histories were unchanged
 Routine automated tests remain local-only; this was a separately authorized
 external acceptance check. Protocol reference:
 [Brewfather Custom Stream](https://docs.brewfather.app/integrations/custom-stream).
+
+## GitHub staging — 2026-11-17
+
+The clean source history was pushed to `jonohr/fermentrack-rs`, verified private
+at the time of upload. Gitleaks scanned all 29 commits through `312983c` with no
+findings. A separate historical-blob check found no matches for the private
+installation markers checked. This is source staging, not a public binary release.
+CI, a verified private vulnerability reporting route and matching release/source
+artifacts remain release preparation work. Brewfather follow-up is tracked in
+[issue 1](https://github.com/jonohr/fermentrack-rs/issues/1).

@@ -8,7 +8,7 @@ firmware flashing and the TiltBridge 2 Fermentrack target are not implemented.
 
 ## Tilt app, Tilt Pi and Tilt Pico: custom Cloud URL
 
-1. Enable collection on the RS server as described in INSTALLATION.md.
+1. Start RS normally; collection is available by default. See [installation](INSTALLATION.md) if you use maintenance mode.
 2. Open Equipment → Gravity sensors → Add. Choose **Tilt app / Tilt Pi · Experimental**.
 3. Name the sensor, select its color and the temperature unit for display in RS.
 4. Optionally enter its MAC address. If set, enable Identify by MAC on the sender;
