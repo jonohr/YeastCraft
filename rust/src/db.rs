@@ -117,6 +117,12 @@ pub fn get(c: &Connection, id: &str) -> Result<Entity> {
     })
 }
 pub fn validate(e: &Entity) -> Result<()> {
+    if e.kind == "sensors"
+        && e.data["collection_enabled"] == true
+        && matches!(e.data["sensor_type"].as_str(), Some("tilt" | "tiltbridge"))
+    {
+        crate::tilt::validate_config(&e.data)?;
+    }
     if e.kind == "sensors" && e.data["sensor_type"] == "ispindel" {
         let source = e.data["gravity_source"].as_str().unwrap_or("server");
         anyhow::ensure!(

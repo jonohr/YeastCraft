@@ -62,6 +62,7 @@ import { api, list, save, type Entity } from "./api";
 import { activeTarget, operatingState, controllerEvent } from "./controller";
 import PinConfiguration from "./pin-config";
 import SensorTools from "./sensor-tools";
+import { isTilt, TiltFields, TiltNotice } from "./tilt";
 import EquipmentSetup from "./equipment-setup";
 import IntegrationSetup from "./integration-setup";
 import Troubleshooting from "./troubleshooting";
@@ -1516,6 +1517,9 @@ function Editor({
               onChange={(e) => setName(e.target.value)}
             />
           </label>
+          {kind === "sensors" && isTilt(data.sensor_type) && (
+            <TiltFields type={data.sensor_type} data={data} set={set} />
+          )}
           {(fields[kind] || [])
             .filter((f) => kind !== "batches" || f.key !== "status")
             .filter(
@@ -1786,6 +1790,7 @@ function Detail({ kind, view }: { kind: string; view?: string }) {
       </Heading>
       <ErrorBox message={error} />
       <ErrorBox message={q.error} />
+      {kind === "sensors" && isTilt(e.data.sensor_type) && <TiltNotice />}
       {view === "connect" && (
         <EquipmentSetup
           kind={kind}
@@ -1911,7 +1916,12 @@ function Detail({ kind, view }: { kind: string; view?: string }) {
               )}
               {ps.length ? (
                 <Suspense fallback={<Loading />}>
-                  <Chart points={ps} />
+                  <Chart
+                    points={ps}
+                    gravityOnly={
+                      kind === "sensors" && isTilt(e.data.sensor_type)
+                    }
+                  />
                 </Suspense>
               ) : (
                 <Empty title="No readings in this period">

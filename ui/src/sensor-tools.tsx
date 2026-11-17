@@ -1,3 +1,4 @@
+import { isTilt, TiltConnection } from "./tilt";
 import { CalibrationCurve } from "./workspace-ui";
 import { confirmAction } from "./dialogs";
 // SPDX-License-Identifier: GPL-3.0-only
@@ -43,7 +44,12 @@ export default function SensorTools({
             ["calibration", "Calibration & source"],
             ["connection", "Connection"],
           ]
-            .filter(([key]) => ispindel || key === "reading")
+            .filter(
+              ([key]) =>
+                ispindel ||
+                key === "reading" ||
+                (isTilt(sensor.data.sensor_type) && key === "connection"),
+            )
             .map(([key, label]) => (
               <button
                 key={key}
@@ -56,6 +62,9 @@ export default function SensorTools({
         </nav>
       )}
       {tab === "reading" && <ManualReading sensor={sensor} refresh={refresh} />}
+      {isTilt(sensor.data.sensor_type) && tab === "connection" && (
+        <TiltConnection sensor={sensor} refresh={refresh} />
+      )}
       {ispindel && (
         <>
           {tab === "calibration" && (

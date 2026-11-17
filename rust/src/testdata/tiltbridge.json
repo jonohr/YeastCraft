@@ -1,0 +1,1 @@
+{"mdns_id":"test-bridge","tilts":{"Red":{"color":"Red","temp":"68.0","tempUnit":"F","gravity":"1.0570","weeks_on_battery":100,"sends_battery":false,"high_resolution":false,"fwVersion":1004,"rssi":-75},"Pink":{"color":"Pink","temp":"20.0","tempUnit":"C","gravity":"1.0123","weeks_on_battery":3,"sends_battery":true,"high_resolution":true,"fwVersion":1004,"rssi":-60}}}

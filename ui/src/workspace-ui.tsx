@@ -1,3 +1,4 @@
+import { isTilt } from "./tilt";
 import { stepCondition } from "./profile-builder";
 import { batchStatus, newestFirst } from "./workflow";
 import { duration } from "./duration";
@@ -188,6 +189,41 @@ export function Metrics({
         "Reported by the sensor",
       ],
     ];
+    if (isTilt(entity.data.sensor_type)) {
+      cards[0] = [
+        "Specific gravity",
+        sg?.toFixed(p.gravity_unit === "SG" ? 4 : 1) ?? "—",
+        p.gravity_unit,
+        v.reading_source === "manual"
+          ? "Manual measurement"
+          : "Reported by Tilt sender",
+      ];
+      cards = [
+        cards[0],
+        cards[2],
+        [
+          "Tilt color",
+          entity.data.tilt_color || "—",
+          "",
+          "Configured sensor identity",
+        ],
+        typeof v.weeks_on_battery === "number"
+          ? [
+              "Battery age",
+              String(v.weeks_on_battery),
+              "weeks",
+              "Reported by TiltBridge",
+            ]
+          : [
+              "Connection",
+              entity.data.sensor_type === "tiltbridge"
+                ? "TiltBridge"
+                : "Tilt HTTP",
+              "",
+              "Experimental receiver",
+            ],
+      ];
+    }
   }
   return (
     <div className="measurement-grid">

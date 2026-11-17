@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, save, type Entity } from "./api";
 import { Modal } from "./dialogs";
+import { isTilt, TiltFields, TiltConnection } from "./tilt";
 import { formatDate } from "./preferences";
 export default function EquipmentSetup({
   kind,
@@ -31,6 +32,15 @@ export default function EquipmentSetup({
     [diag, setDiag] = useState<any>(null),
     [entity, setEntity] = useState<Entity | null>(null),
     [token, setToken] = useState(""),
+    [endpoint, setEndpoint] = useState(""),
+    [tiltConfig, setTiltConfig] = useState<Record<string, any>>({
+      tilt_color: initial?.data.tilt_color || "",
+      tilt_mac: initial?.data.tilt_mac || "",
+      tilt_bridge_id: initial?.data.tilt_bridge_id || "",
+      tilt_utc_offset_minutes:
+        initial?.data.tilt_utc_offset_minutes ??
+        -new Date().getTimezoneOffset(),
+    }),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const record = useRef<Entity | null>(null);
@@ -83,6 +93,10 @@ export default function EquipmentSetup({
         throw Error(
           "Collection is disabled on this server. An administrator must enable it before connecting equipment.",
         );
+      if (isTilt(type) && !tiltConfig.tilt_color)
+        throw Error("Choose a Tilt color.");
+      if (type === "tiltbridge" && !tiltConfig.tilt_bridge_id)
+        throw Error("Enter the TiltBridge mDNS ID.");
       const data = controller
         ? {
             connection_type: type,
@@ -97,13 +111,20 @@ export default function EquipmentSetup({
                 initial?.data.control_claimed === true),
           }
         : {
+            ...(isTilt(type)
+              ? {
+                  ...tiltConfig,
+                  tilt_mac: type === "tiltbridge" ? "" : tiltConfig.tilt_mac,
+                }
+              : {}),
             sensor_type: type,
             unit,
             collection_enabled: !manual,
-            gravity_source:
-              initial?.data.gravity_source ||
-              (sgUnit === "unknown" ? "server" : "device"),
-            reported_gravity_unit: sgUnit,
+            gravity_source: isTilt(type)
+              ? "device"
+              : initial?.data.gravity_source ||
+                (sgUnit === "unknown" ? "server" : "device"),
+            reported_gravity_unit: isTilt(type) ? "SG" : sgUnit,
           };
       const latest = initial
         ? await api<Entity>(
@@ -122,6 +143,7 @@ export default function EquipmentSetup({
           {},
         );
         setToken(key.token);
+        setEndpoint(key.path || "");
       }
       setEntity(e);
       saved();
@@ -146,7 +168,7 @@ export default function EquipmentSetup({
         <p>
           {controller
             ? "The temperature controller operates your cooling and heating. Saving connects it for readings; it does not send a new target."
-            : "Connect your iSpindel and wait for its first packet, or create a sensor for manual readings."}
+            : "Connect an iSpindel or experimental Tilt HTTP receiver, or create a sensor for manual readings."}
         </p>
       )}
       {initial?.data.profile && !initial.data.control_claimed && (
@@ -186,6 +208,12 @@ export default function EquipmentSetup({
               ) : (
                 <>
                   <option value="ispindel">iSpindel</option>
+                  <option value="tilt">
+                    Tilt app / Tilt Pi · Experimental
+                  </option>
+                  <option value="tiltbridge">
+                    TiltBridge legacy HTTP · Experimental
+                  </option>
                   <option value="manual">Manual measurements</option>
                 </>
               )}
@@ -229,7 +257,14 @@ export default function EquipmentSetup({
               <option>F</option>
             </select>
           </label>
-          {!controller && !manual && (
+          {!controller && isTilt(type) && (
+            <TiltFields
+              type={type}
+              data={tiltConfig}
+              set={(k, v) => setTiltConfig((d) => ({ ...d, [k]: v }))}
+            />
+          )}
+          {!controller && type === "ispindel" && (
             <label>
               Units used by your iSpindel formula
               <select
@@ -287,7 +322,14 @@ export default function EquipmentSetup({
           {entity.data.last_seen && (
             <p>Last reading: {formatDate(entity.data.last_seen)}</p>
           )}
-          {!controller && !manual && (
+          {!controller && isTilt(type) && (
+            <TiltConnection
+              sensor={entity}
+              initialEndpoint={endpoint}
+              refresh={saved}
+            />
+          )}
+          {!controller && type === "ispindel" && (
             <>
               <p>
                 Enter this endpoint and token in your iSpindel’s HTTP
@@ -360,7 +402,7 @@ export default function EquipmentSetup({
                 ? "Open temperature controller"
                 : "Open gravity sensor"}
             </Link>
-            {!controller && !manual && connected && (
+            {!controller && type === "ispindel" && connected && (
               <Link
                 className="button secondary"
                 to={`/sensors/${encodeURIComponent(entity.id)}/calibration`}

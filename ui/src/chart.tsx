@@ -34,7 +34,13 @@ const plotSeries = [
   ["Gravity", "gravity", "gravity"],
   ["Sample temperature", "gravity_temp", "sample"],
 ] as const;
-export default function Chart({ points }: { points: any[] }) {
+export default function Chart({
+  points,
+  gravityOnly = false,
+}: {
+  points: any[];
+  gravityOnly?: boolean;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const instance = useRef<ReturnType<typeof echarts.init> | null>(null);
   const prefs = usePreferences();
@@ -256,51 +262,58 @@ export default function Chart({ points }: { points: any[] }) {
         aria-label="Temperature and gravity over time"
       />
       <div className="plot-legend" aria-label="Chart series">
-        {plotSeries.map(([name, key, color]) => (
-          <button
-            key={key}
-            type="button"
-            aria-pressed={!hidden[name]}
-            onClick={() => {
-              instance.current?.dispatchAction({
-                type: "legendToggleSelect",
-                name,
-              });
-              setHidden((previous) => ({
-                ...previous,
-                [name]: !previous[name],
-              }));
-            }}
-          >
-            <span
-              className={
-                "plot-swatch" + (key.endsWith("_set") ? " dashed" : "")
-              }
-              style={{ color: `var(--plot-${color})` }}
-              aria-hidden="true"
-            />
-            {name}
-          </button>
-        ))}
+        {plotSeries
+          .filter(
+            ([, key]) =>
+              !gravityOnly || key === "gravity" || key === "gravity_temp",
+          )
+          .map(([name, key, color]) => (
+            <button
+              key={key}
+              type="button"
+              aria-pressed={!hidden[name]}
+              onClick={() => {
+                instance.current?.dispatchAction({
+                  type: "legendToggleSelect",
+                  name,
+                });
+                setHidden((previous) => ({
+                  ...previous,
+                  [name]: !previous[name],
+                }));
+              }}
+            >
+              <span
+                className={
+                  "plot-swatch" + (key.endsWith("_set") ? " dashed" : "")
+                }
+                style={{ color: `var(--plot-${color})` }}
+                aria-hidden="true"
+              />
+              {name}
+            </button>
+          ))}
       </div>
-      <div className="drift-legend" aria-label="Operating state colours">
-        <span>
-          <i style={{ background: "#d64b43" }} />
-          Heating
-        </span>
-        <span>
-          <i style={{ background: "#387fc3" }} />
-          Cooling
-        </span>
-        <span>
-          <i style={{ background: "#429464" }} />
-          Idle
-        </span>
-        <span>
-          <i style={{ background: "#a8aea8" }} />
-          Off / other
-        </span>
-      </div>
+      {!gravityOnly && (
+        <div className="drift-legend" aria-label="Operating state colours">
+          <span>
+            <i style={{ background: "#d64b43" }} />
+            Heating
+          </span>
+          <span>
+            <i style={{ background: "#387fc3" }} />
+            Cooling
+          </span>
+          <span>
+            <i style={{ background: "#429464" }} />
+            Idle
+          </span>
+          <span>
+            <i style={{ background: "#a8aea8" }} />
+            Off / other
+          </span>
+        </div>
+      )}
     </>
   );
 }

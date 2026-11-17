@@ -13,14 +13,24 @@ use serde_json::{Value, json};
 pub async fn key(State(a): State<App>, Path(id): Path<String>) -> Result<Json<Value>, ApiError> {
     let token = uuid::Uuid::new_v4().to_string() + &uuid::Uuid::new_v4().to_string();
     let hashed = auth::digest(&token);
-    a.db.run(move |c| {
-        let mut e = db::get(c, &id)?;
-        anyhow::ensure!(e.kind == "sensors", "Not a sensor");
-        e.data["ingest_hash"] = json!(hashed);
-        db::put(c, &e)
-    })
-    .await?;
-    Ok(Json(json!({"token":token,"path":"/iSpindel"})))
+    let kind =
+        a.db.run(move |c| {
+            let mut e = db::get(c, &id)?;
+            anyhow::ensure!(e.kind == "sensors", "Not a sensor");
+            e.data["ingest_hash"] = json!(hashed);
+            db::put(c, &e)?;
+            Ok(e.data["sensor_type"]
+                .as_str()
+                .unwrap_or("ispindel")
+                .to_owned())
+        })
+        .await?;
+    let path = match kind.as_str() {
+        "tilt" => format!("/ingest/tilt/{token}"),
+        "tiltbridge" => format!("/ingest/tiltbridge/{token}"),
+        _ => "/iSpindel".to_owned(),
+    };
+    Ok(Json(json!({"token":token,"path":path})))
 }
 pub fn convert(n: f64, from: &str, to: &str) -> Result<f64> {
     match (from, to) {
@@ -127,43 +137,50 @@ pub fn ispindel_values(packet: &Value, sensor: &Entity, calibrations: &[Entity])
         json!({"gravity":g.map(|g|(g*10000.0).round()/10000.0),"gravity_temp":temp,"temp_format":unit,"angle":angle,"battery":packet["battery"],"rssi":packet.get("RSSI").or(packet.get("rssi")),"reading_source":"ispindel","gravity_source":source,"server_gravity":calculated,"ispindel_gravity":reported,"ispindel_gravity_unit":reported_unit,"ispindel_gravity_sg":reported_sg,"calibration_id":sensor.data["active_ispindel_calibration"],"gravity_status":if g.is_some(){"ok"}else if source=="device"{"reported_unit_or_value_missing"}else{"calibration_missing_or_invalid"}}),
     )
 }
-fn store(c: &mut rusqlite::Connection, mut e: Entity, values: Value) -> Result<()> {
+fn store(c: &mut rusqlite::Connection, e: Entity, values: Value) -> Result<()> {
     let tx = c.transaction()?;
+    store_values(&tx, e, values)?;
+    tx.commit()?;
+    Ok(())
+}
+pub(crate) fn store_values(tx: &rusqlite::Connection, mut e: Entity, values: Value) -> Result<()> {
     let now = chrono::Utc::now().timestamp_millis();
     e.data["last_seen"] = json!(now);
     e.data["last_values"] = values.clone();
-    if values["reading_source"] == "ispindel" {
+    if matches!(
+        values["reading_source"].as_str(),
+        Some("ispindel" | "tilt" | "tiltbridge")
+    ) {
         e.data["last_automatic"] = json!({"time":now,"values":values});
     }
-    db::put(&tx, &e)?;
+    db::put(tx, &e)?;
     db::point(
-        &tx,
+        tx,
         &Point {
             source: e.id.clone(),
             time: now,
-            sequence: next_sequence(&tx, &e.id, now)?,
+            sequence: next_sequence(tx, &e.id, now)?,
             values: values.clone(),
         },
     )?;
-    for log in db::list(&tx, "gravity_logs")? {
+    for log in db::list(tx, "gravity_logs")? {
         if log.data["device"] == e.id && log.data["status"] == "active" {
             db::point(
-                &tx,
+                tx,
                 &Point {
                     source: log.id.clone(),
                     time: now,
-                    sequence: next_sequence(&tx, &log.id, now)?,
+                    sequence: next_sequence(tx, &log.id, now)?,
                     values: values.clone(),
                 },
             )?;
         }
     }
-    for batch in db::list(&tx, "batches")? {
+    for batch in db::list(tx, "batches")? {
         if batch.data["sensor"] == e.id && batch.data["status"] == "active" {
-            db::append_point(&tx, &batch.id, now, &values)?;
+            db::append_point(tx, &batch.id, now, &values)?;
         }
     }
-    tx.commit()?;
     Ok(())
 }
 fn next_sequence(c: &rusqlite::Connection, source: &str, time: i64) -> Result<i64> {
@@ -185,7 +202,11 @@ pub async fn ispindel(State(a): State<App>, Json(v): Json<Value>) -> Result<Json
         let sensors = db::list(c, "sensors")?;
         let sensor = sensors
             .into_iter()
-            .find(|e| e.data["ingest_hash"] == hash && e.data["collection_enabled"] == true)
+            .find(|e| {
+                e.data["ingest_hash"] == hash
+                    && e.data["collection_enabled"] == true
+                    && e.data["sensor_type"] == "ispindel"
+            })
             .context("Unknown or disabled sensor token")?;
         let vals = ispindel_values(&v, &sensor, &db::list(c, "calibrations")?)?;
         store(c, sensor, vals)

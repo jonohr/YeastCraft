@@ -9,6 +9,7 @@ mod integrations;
 mod profiles;
 mod protocol;
 mod sensors;
+mod tilt;
 use axum::{
     Json, Router,
     extract::{DefaultBodyLimit, Path, Query, Request, State},
@@ -150,6 +151,14 @@ fn router(a: App, static_dir: PathBuf) -> Router {
         .route(
             "/healthz",
             get(|| async { Json(json!({"status":"ok","version":env!("CARGO_PKG_VERSION")})) }),
+        )
+        .route(
+            "/ingest/tilt/{token}",
+            post(tilt::cloud).layer(DefaultBodyLimit::max(16384)),
+        )
+        .route(
+            "/ingest/tiltbridge/{token}",
+            post(tilt::bridge).layer(DefaultBodyLimit::max(65536)),
         )
         .route("/iSpindel", post(sensors::ispindel))
         .route("/ispindel", post(sensors::ispindel))
