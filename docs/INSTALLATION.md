@@ -2,8 +2,8 @@
 
 ## First start
 
-Use the Docker Compose command in README.md. Create the administrator account before
-exposing the app to other machines. Local authentication is the default. First-run
+Use the Docker Compose command in README.md. Open `http://SERVER-IP:8315` on
+your trusted local network and create the administrator account. Local authentication is the default. First-run
 setup and login must work without any reverse proxy or external identity provider.
 
 Compose builds the source locally; there is no published image registry requirement.
@@ -12,25 +12,10 @@ It has no shell or package manager. See [container details](CONTAINER.md).
 `docker compose -f compose.rust.yml down` stops the installation but keeps its named
 database volume. Do not add `-v` unless you intend to delete that installation's data.
 
-## Enable collection and temperature control
+## Connect equipment and control temperature
 
-Create `compose.control.yml` beside `compose.rust.yml`:
-
-```yaml
-services:
-  fermentrack-rs:
-    command:
-      - --listen
-      - 0.0.0.0:8315
-      - --enable-collection
-      - --enable-control
-```
-
-Then recreate the service with both files:
-
-```sh
-docker compose -f compose.rust.yml -f compose.control.yml up -d
-```
+Collection, control and export workers are available by default. Configure equipment
+and destinations in the app; there is no second activation step in Compose.
 
 Stop the old application before connecting the same BrewPi. In **Equipment**, add
 a temperature controller, choose TCP or serial, and enter its address/port or serial
@@ -44,21 +29,39 @@ start a profile to control temperature. Check the returned target and controller
 state. A manual target cancels the assigned profile. Hardware still regulates its
 own heating/cooling cycle; RS sends targets and logs measurements.
 
-For an iSpindel, enable collection, create its sensor and receiving token, and point
+For an iSpindel, create its sensor and receiving token, and point
 the device at `/iSpindel` on the reachable app URL. Choose device SG/Plato explicitly
 or configure the server calibration. A human-login reverse proxy must provide a
 separate reachable ingest path for sensors; do not disable authentication for the
 whole application. The sensor token authenticates ingest requests.
 
-Exports additionally require `--enable-export` and an explicitly enabled destination.
-They remain off by default. Do not use a real destination for test payloads.
+For exports, configure and explicitly enable a destination in the app. Nothing is
+sent before a destination is configured and enabled. Do not use a real destination
+for test payloads.
 
 ## Network access and authentication
 
-The bundled Compose file publishes only `127.0.0.1:8315`. SSH forwarding supports
-remote initial setup without changing that exposure. For shared access, configure
-an HTTPS reverse proxy and use `--secure-cookie`. Proxy forwarding must preserve
-the external Host/Origin consistently; cross-origin writes are refused.
+The bundled Compose file publishes port 8315 on all IPv4 host interfaces by default.
+This makes it reachable from other computers and sensors on your network. Binding
+to all interfaces is not a firewall: use a trusted network and do not forward this
+HTTP port directly from the internet. Complete first-account setup promptly.
+
+For a local proxy or SSH-only access, create a `.env` file beside Compose containing:
+
+```dotenv
+FERMENTRACK_BIND_ADDRESS=127.0.0.1
+```
+
+Recreate the container after changing the bind address. You can also set it to a
+specific address assigned to the host. For SSH forwarding:
+
+```sh
+ssh -L 8315:127.0.0.1:8315 user@your-server
+```
+
+For HTTPS, configure a reverse proxy and add `--secure-cookie` to the server
+command. Proxy forwarding must preserve the external Host/Origin consistently;
+cross-origin writes are refused. Do not enable secure cookies for plain HTTP.
 
 Local login can stay enabled behind a proxy. Optional proxy-only authentication
 uses `--disable-internal-auth --proxy-proof-file /run/secrets/proxy-proof`.
@@ -73,8 +76,23 @@ No proxy-only mode is needed for the default standalone installation.
 
 Download the SQLite backup from the app before upgrades. It excludes login accounts
 and sessions, so preserve administrator access separately. Restore requires reviewing
-the file and explicit confirmation, with collection/control/exports disabled on the
-server. Restored equipment and destinations remain disabled until reconnected.
+the file and explicit confirmation. Start the server with `--maintenance` while
+restoring; this explicitly suspends collection, control and exports. For Docker,
+create a temporary override such as `compose.maintenance.yml`:
+
+```yaml
+services:
+  fermentrack-rs:
+    command: ["--listen", "0.0.0.0:8315", "--maintenance"]
+```
+
+Run `docker compose -f compose.rust.yml -f compose.maintenance.yml up -d`, restore
+the backup in the app, then run `docker compose -f compose.rust.yml up -d` to return
+to normal operation. Restored equipment and destinations remain disabled until
+reconnected. Individual `--disable-collection`, `--disable-control` and
+`--disable-export` switches are also available for diagnostic use. The former
+`--enable-*` switches remain accepted for existing launch configurations, but are
+not needed. Conflicting enable/disable options are rejected.
 
 For legacy import, keep a consistent SQLite database copy and stable CSV directory
 under ignored `private-import/`. Import never requires a running Django installation:

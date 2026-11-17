@@ -97,3 +97,26 @@ existing host services remained active and its unrelated workload stayed idle.
 The subsequent image update adds compressed license notices only; the runtime
 code and libraries are unchanged. Native ARM Docker, physical ARMv7, USB/Bluetooth
 and complete physical fermentation tests are still outside this evidence.
+
+## Normal operation and network defaults — 2026-11-17
+
+Normal server startup now makes collection, control and export workers available
+without enable flags. A fresh database still has no equipment or destinations;
+individual configuration/ownership and enabled-state checks remain in place.
+Explicit `--maintenance` suspends all workers for restore/testing. Individual
+disable switches and conflict detection are tested; former enable flags remain
+accepted for existing launch configurations.
+
+Compose now publishes to all IPv4 host interfaces by default. The optional
+FERMENTRACK_BIND_ADDRESS setting selects loopback or a specific host address.
+Both configurations were validated; acceptance still binds only disposable
+loopback ports and never contacts physical hardware or external export services.
+
+49 Rust tests and Clippy passed. All 50 desktop/mobile browser tests passed with
+explicit maintenance-mode fixture servers. Fresh Compose and standalone/iSpindel/
+BrewPi/Tilt acceptance passed against all three rebuilt images (native amd64,
+emulated ARM64/ARMv7). Standalone checks verify normal startup flags, real local
+command/ingest, restart persistence and maintenance rejection of control commands.
+Live installations were not changed. Previous exact native-Pi binary hashes and
+source-bundle receipts describe their earlier snapshots; regenerate release assets
+for this new source revision.

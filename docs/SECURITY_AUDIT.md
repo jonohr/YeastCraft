@@ -83,3 +83,13 @@ and emulation. Rebuild/rescan when base images or dependency locks change.
 Before a stable public release, rerun current advisory scans, review remaining
 runtime findings, enable a private vulnerability reporting route and finish the
 license/distribution checklist. No GitHub publication or production update occurred.
+
+## Subsequent default changes — 2026-11-17
+
+Normal startup now enables workers; individual equipment/destination configuration
+still gates actions. Explicit maintenance mode replaces implicitly disabled workers
+for restore and testing. Compose's default port is now reachable on all IPv4 host
+interfaces, with optional loopback binding. First-account setup must take place on
+a trusted network; the default bind is not a LAN firewall. Updated installation
+instructions explain this exposure and the optional private binding. Regression
+evidence is in VALIDATION.md. No claim of changed dependency-CVE counts is made.

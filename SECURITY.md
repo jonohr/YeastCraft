@@ -8,7 +8,9 @@ No stable release or long-term security support schedule has been established ye
 
 ## Deployment boundary
 
-- Complete first-account setup through loopback/SSH before exposing the service.
+- Complete first-account setup on a trusted network. The default Docker port is
+  reachable on all IPv4 host interfaces; optional loopback binding is documented.
+  Do not expose an unconfigured installation to untrusted users.
 - Use HTTPS for remote access and enable secure cookies as described in INSTALLATION.md.
 - Local accounts have full administrative access; this is not a multi-tenant service.
 - External authentication requires a trusted proxy and its separate proof secret.

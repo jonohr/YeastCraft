@@ -39,23 +39,25 @@ mkdir -p private-import
 docker compose -f compose.rust.yml up -d --build
 ```
 
-Open **http://127.0.0.1:8315** and create the first administrator account. There is
+Open **http://SERVER-IP:8315** from your local network (or
+**http://localhost:8315** on the server itself) and create the first administrator account. There is
 no default username or password. The password must contain at least 12 characters.
 The database is stored in the Compose-managed `rust_state` volume.
 
-The initial installation has collection, control and exports **disabled**. This
-lets you inspect the interface and import data before connecting equipment.
-Follow [installation and controller setup](docs/INSTALLATION.md) to enable them.
+Collection, temperature control and exports are ready to use. Add your controller
+or sensor in the app; exports start only when you configure and enable a destination.
+No extra startup flags or Compose override is needed.
+Follow [installation and controller setup](docs/INSTALLATION.md) for the connection steps.
 Do not run two applications against the same controller.
 
-The host port is bound to loopback. For a remote server, forward it over SSH:
+The default port is reachable on the server's IPv4 interfaces. Set up the first
+account on a trusted network. Do not forward port 8315 directly from the internet;
+use HTTPS with authentication for remote access.
 
-```sh
-ssh -L 8315:127.0.0.1:8315 user@your-server
-```
-
-For HTTPS or optional external authentication, see the installation guide. The
-standalone installation does not require Authentik, a proxy proof or another service.
+If you prefer access only through a local proxy or SSH tunnel, put
+`FERMENTRACK_BIND_ADDRESS=127.0.0.1` in a local `.env` file beside Compose.
+See [network and authentication options](docs/INSTALLATION.md#network-access-and-authentication).
+The standalone installation does not require Authentik, a proxy proof or another service.
 
 ## Build and test from source
 

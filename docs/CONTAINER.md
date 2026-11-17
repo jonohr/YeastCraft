@@ -9,6 +9,10 @@ The application healthcheck runs the server binary directly.
 The process uses UID/GID 1000:1000. Compose keeps the root filesystem read-only,
 drops capabilities, enables no-new-privileges, and limits memory/PIDs. Database
 files and temporary SQLite/backup files live in the writable state volume.
+Normal startup enables collection/control/export workers; equipment and destinations
+are configured in the app. Use `--maintenance` explicitly for restore or offline
+inspection. Compose publishes port 8315 on all IPv4 host interfaces by default;
+`FERMENTRACK_BIND_ADDRESS=127.0.0.1` selects loopback.
 The existing allocator setting is retained. This is a smaller disk image, not a
 claim that RAM usage falls by the same percentage.
 

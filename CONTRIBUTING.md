@@ -35,7 +35,7 @@ python3 scripts/verify-container.py
 ```
 
 This uses a unique Compose project, a random loopback port and a new named volume.
-It checks account setup, login/logout, safe defaults, UI delivery, non-root execution,
+It checks account setup, login/logout, operational defaults and explicit maintenance, UI delivery, non-root execution,
 healthcheck and account/profile persistence after restart. Its container and volume
 are removed afterward. It never uses an existing installation or proxy credentials.
 
