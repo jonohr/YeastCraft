@@ -2,8 +2,6 @@
   <img src="design/brand/wordmark-forest.svg" alt="Fermentrack RS" width="560">
 </p>
 
-<p align="center"><strong>Let the yeast work. Give the fridge a plan.</strong></p>
-
 <p align="center">
   <a href="#quick-start-with-docker-compose">Get started</a> ·
   <a href="docs/COMPATIBILITY.md">Supported equipment</a> ·
