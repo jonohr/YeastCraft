@@ -2980,6 +2980,10 @@ function SettingsPage({ internalAuth }: { internalAuth: boolean }) {
       <section className="card" aria-labelledby="about-rs-title">
         <h2 id="about-rs-title">About Fermentrack RS</h2>
         <p>
+          An independent Rust rewrite of Fermentrack, with a redesigned interface,
+          additional features, and a focus on low resource usage.
+        </p>
+        <p>
           Fermentrack RS builds on the work of{" "}
           <a href="https://github.com/thorrak/fermentrack">Fermentrack</a> by
           John Beeler, Fredrik Steen and contributors. Its ideas, controller
