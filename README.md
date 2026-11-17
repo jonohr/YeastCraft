@@ -18,6 +18,8 @@ Other hardware combinations need testing. Tilt HTTP receivers are experimental;
 direct Bluetooth and firmware flashing are not implemented. See [compatibility](docs/COMPATIBILITY.md) for the distinction between
 physical hardware checks and simulator tests.
 
+**Why RS?** Rust, with a nod to *Rennsport* — a lighter, leaner take on fermentation control.
+
 ## Features
 
 - BrewPi temperature collection and confirmed beer/chamber setpoints over TCP or serial.

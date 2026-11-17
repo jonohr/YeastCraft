@@ -11,6 +11,7 @@ notice is retained in LICENSES/Fermentrack-MIT.txt. The BrewPi script's GPLv3 te
 is retained in LICENSES/BrewPi-GPL-3.0.md. These notices do not relicense upstream
 code. This repository does not include the original Python application or firmware.
 
+The geometric RS lettering is original RS artwork under GPL-3.0-only.
 The flask and interface icons derive from Lucide/Feather; their ISC notice is
 retained in design/brand/LICENSE-lucide.txt and LICENSES/Lucide-ISC.txt. Dependencies retain their own licenses,
 and Cargo/npm lockfiles identify the dependency versions.
