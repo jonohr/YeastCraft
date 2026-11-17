@@ -13,7 +13,7 @@ This is an early preview, not a claim of full Fermentrack feature parity.
 | Tilt HTTP / legacy TiltBridge | Experimental form/JSON receivers, protocol fixtures and isolated HTTP tests | No physical hardware validation; one color per bridge URL; logging only. See [Tilt](TILT.md) |
 | Direct BLE / TiltBridge 2 Fermentrack target | Not implemented | Hardware contributors welcome |
 | Firmware tools | Not implemented | Flash with existing tools; no firmware binaries included |
-| Exports | Adapter/payload and isolated HTTP tests | Delivery to each external production service not verified |
+| Exports | Adapter/payload and isolated HTTP tests; Brewfather Custom Stream returned HTTP success to an explicitly authorized real-account test from the standalone image | Brewfather account display/batch association not yet confirmed; other external services unverified |
 | Import/backup | SQLite/CSV fixtures, private legacy parity checks and backup/restore tests | Review warnings; unsupported legacy features remain |
 | Platforms | Linux amd64 native; ARM64 app/libraries native on Raspberry Pi 5; ARM64/ARMv7 Docker under QEMU | Native ARM Docker, physical ARMv7 and other operating systems not verified; see [container builds](CONTAINER.md) |
 

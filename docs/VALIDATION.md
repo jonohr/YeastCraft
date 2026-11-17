@@ -120,3 +120,29 @@ command/ingest, restart persistence and maintenance rejection of control command
 Live installations were not changed. Previous exact native-Pi binary hashes and
 source-bundle receipts describe their earlier snapshots; regenerate release assets
 for this new source revision.
+
+## Brewfather real-account export — 2026-11-17
+
+With explicit account-owner authorization, the standalone amd64 image
+`sha256:87d6aa49e26ea2a95e6ae25356c8b5b0ba5868c956f68414581712d4332959ec`
+sent one synthetic reading through its actual export worker to Brewfather Custom
+Stream over HTTPS. The saved account endpoint was reused without printing or
+committing its logging ID. No external credentials are included in test fixtures.
+
+The separate device name was `Fermentrack RS test`: temperature 20.25 C, chamber
+19.50 C, room 21.75 C and gravity 1.042 SG. Local account setup/login, payload
+preview, destination activation and the worker's successful HTTP response path
+were exercised. `last_success` matched `last_attempt`; `last_error` was null.
+
+This confirms an HTTP success response, not independent verification of stored
+readings: the worker currently checks HTTP status, not the response body. Account
+display and batch association still need confirmation in Brewfather. No repeated
+15-minute update or long-running export test was performed.
+
+The disposable container used a fresh tmpfs database, collection/control disabled,
+one export destination and a 24-hour retry interval to limit the test to one
+attempt. The container and temporary state were removed immediately afterward.
+The live RS installation, controller and existing batch histories were unchanged.
+Routine automated tests remain local-only; this was a separately authorized
+external acceptance check. Protocol reference:
+[Brewfather Custom Stream](https://docs.brewfather.app/integrations/custom-stream).
