@@ -1,2 +1,3 @@
 # Preserve upstream notice bytes, including original line endings and spacing.
 LICENSES/third-party/texts/* -text -whitespace
+LICENSES/third-party/common/* -text -whitespace
