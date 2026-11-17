@@ -3,6 +3,30 @@ use super::*;
 use axum::body::Body;
 use http_body_util::BodyExt;
 use tower::ServiceExt;
+#[test]
+fn operational_defaults_and_explicit_maintenance() {
+    let args = |values: &[&str]| values.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+    assert_eq!(operational_flags(&[]).unwrap(), [true, true, true]);
+    assert_eq!(
+        operational_flags(&args(&["--maintenance"])).unwrap(),
+        [false, false, false]
+    );
+    assert_eq!(
+        operational_flags(&args(&["--disable-control", "--disable-export"])).unwrap(),
+        [true, false, false]
+    );
+    assert_eq!(
+        operational_flags(&args(&[
+            "--enable-collection",
+            "--enable-control",
+            "--enable-export"
+        ]))
+        .unwrap(),
+        [true, true, true]
+    );
+    assert!(operational_flags(&args(&["--maintenance", "--enable-control"])).is_err());
+    assert!(operational_flags(&args(&["--disable-export", "--enable-export"])).is_err());
+}
 fn app(root: &std::path::Path) -> App {
     App {
         db: Db::init(root.join("security.sqlite")).unwrap(),

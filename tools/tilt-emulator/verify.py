@@ -39,7 +39,7 @@ with tempfile.TemporaryDirectory(prefix='rs-tilt-test-') as temp:
         global proc
         proc = subprocess.Popen([str(ROOT/'rust/target/debug/fermentrack-rs'), '--db', str(Path(temp)/'test.sqlite'),
             '--listen', f'127.0.0.1:{port}', '--static', str(ROOT/'ui/dist'), '--import-root', temp,
-            *(['--enable-collection'] if enabled else [])], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            *([] if enabled else ['--maintenance'])], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         for _ in range(100):
             try: api('auth/status'); return
             except (OSError, AssertionError): time.sleep(.1)

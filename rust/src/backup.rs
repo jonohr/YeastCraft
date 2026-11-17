@@ -56,7 +56,7 @@ pub async fn upload(
 ) -> Result<Response, ApiError> {
     if a.collection || a.control || a.exports {
         return Err(ApiError::bad(
-            "Restart with collection, control and exports disabled before restoring",
+            "Restart the server with --maintenance before restoring",
         ));
     }
     let file =

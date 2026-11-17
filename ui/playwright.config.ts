@@ -19,7 +19,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `../rust/target/debug/fermentrack-rs --db ${testDatabase} --listen 127.0.0.1:8316 --static dist --import-root ../fixtures/browser`,
+    command: `../rust/target/debug/fermentrack-rs --db ${testDatabase} --listen 127.0.0.1:8316 --static dist --import-root ../fixtures/browser --maintenance`,
     port: 8316,
     reuseExistingServer: false,
   },

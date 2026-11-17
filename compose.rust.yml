@@ -9,7 +9,7 @@ services:
     read_only: true
     restart: "no"
     ports:
-      - "127.0.0.1:8315:8315"
+      - "${FERMENTRACK_BIND_ADDRESS:-0.0.0.0}:8315:8315"
     volumes:
       - rust_state:/app/state
       - ./private-import:/app/private-import:ro

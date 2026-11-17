@@ -445,12 +445,28 @@ async fn import_api(
         Ok(Json(import::report(&p)))
     }
 }
+fn operational_flags(args: &[String]) -> anyhow::Result<[bool; 3]> {
+    let maintenance = args.iter().any(|arg| arg == "--maintenance");
+    let mut enabled = [true; 3];
+    for (index, feature) in ["collection", "control", "export"].iter().enumerate() {
+        let explicit_enable = args.contains(&format!("--enable-{feature}"));
+        let explicit_disable = args.contains(&format!("--disable-{feature}"));
+        anyhow::ensure!(
+            !(explicit_enable && (maintenance || explicit_disable)),
+            "Conflicting startup options for {feature}"
+        );
+        // Keep the former enable flags valid for existing launch configurations.
+        enabled[index] = !maintenance && !explicit_disable;
+    }
+    Ok(enabled)
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let args = std::env::args().skip(1).collect::<Vec<_>>();
     if args.iter().any(|a| a == "--help" || a == "-h") {
         println!(
-            "Fermentrack Rust\nserve (default): --db PATH --listen ADDRESS --static DIR --import-root DIR [--secure-cookie] [--disable-internal-auth --proxy-proof-file PATH] [--enable-collection] [--enable-control] [--enable-export]\nimport: --db PATH --source SQLITE --data DIR [--apply] (dry run by default)\nhealthcheck | --version"
+            "Fermentrack Rust\nserve (default): --db PATH --listen ADDRESS --static DIR --import-root DIR [--secure-cookie] [--disable-internal-auth --proxy-proof-file PATH] [--maintenance] [--disable-collection] [--disable-control] [--disable-export]\nCollection, control and export workers are available by default; configure equipment and destinations in the app. --maintenance disables all three.\nimport: --db PATH --source SQLITE --data DIR [--apply] (dry run by default)\nhealthcheck | --version"
         );
         return Ok(());
     }
@@ -481,6 +497,10 @@ async fn main() -> anyhow::Result<()> {
             "--enable-collection"
             | "--enable-control"
             | "--enable-export"
+            | "--disable-collection"
+            | "--disable-control"
+            | "--disable-export"
+            | "--maintenance"
             | "--secure-cookie"
             | "--disable-internal-auth"
             | "--apply" => i += 1,
@@ -515,6 +535,7 @@ async fn main() -> anyhow::Result<()> {
         );
         return Ok(());
     }
+    let [collection, control, exports] = operational_flags(&args)?;
     let a = App {
         db,
         secure_cookie: args.iter().any(|a| a == "--secure-cookie"),
@@ -525,9 +546,9 @@ async fn main() -> anyhow::Result<()> {
                 .map(|p| std::path::Path::new(&p[1])),
         )?,
         import_root: Arc::new(PathBuf::from(opt("--import-root", "private-import"))),
-        control: args.iter().any(|a| a == "--enable-control"),
-        collection: args.iter().any(|a| a == "--enable-collection"),
-        exports: args.iter().any(|a| a == "--enable-export"),
+        control,
+        collection,
+        exports,
         failures: Arc::new(Mutex::new(HashMap::new())),
         auth_slots: Arc::new(tokio::sync::Semaphore::new(2)),
     };

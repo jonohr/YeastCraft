@@ -37,12 +37,12 @@ with tempfile.TemporaryDirectory(prefix='fermentrack-standalone-') as temp, cham
         with opener.open(request, timeout=10) as response:
             return json.load(response)
 
-    def start(enabled=False):
+    def start(maintenance=False):
         global proc
         proc = subprocess.Popen([str(ROOT / 'rust/target/debug/fermentrack-rs'),
             '--db', str(Path(temp) / 'fresh.sqlite'), '--listen', f'127.0.0.1:{port}',
             '--static', str(ROOT / 'ui/dist'), '--import-root', temp,
-            *(['--enable-collection', '--enable-control'] if enabled else [])],
+            *(['--maintenance'] if maintenance else [])],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         for _ in range(100):
             try:
@@ -70,7 +70,7 @@ with tempfile.TemporaryDirectory(prefix='fermentrack-standalone-') as temp, cham
         api('auth/setup', credentials)
         api('auth/login', credentials)
         flags = api('diagnostics')
-        assert not any(flags[key] for key in ('control_enabled', 'collection_enabled', 'exports_enabled'))
+        assert all(flags[key] for key in ('control_enabled', 'collection_enabled', 'exports_enabled'))
         assert api('resources/devices') == []
         def resource(kind, name, data):
             return api('resources/' + kind, {'name': name, 'data': data})
@@ -81,7 +81,7 @@ with tempfile.TemporaryDirectory(prefix='fermentrack-standalone-') as temp, cham
             'port': fridge.server_address[1], 'connection_type': 'wifi', 'unit': 'C',
             'collection_enabled': True, 'control_claimed': True})
         stop()
-        assert start(True)['configured'] is True
+        assert start()['configured'] is True
         api('auth/login', credentials)
         assert api('resources/devices/' + device['id'])['name'] == 'Synthetic chamber'
         api(f"devices/{device['id']}/command", {'mode': 'f', 'temperature': 18, 'confirm_ownership': True})
@@ -91,13 +91,24 @@ with tempfile.TemporaryDirectory(prefix='fermentrack-standalone-') as temp, cham
             '--url', base + '/iSpindel', '--gravity', '1.050', '--angle', '45', '--count', '1'],
             env={**os.environ, 'ISPINDEL_TOKEN': token}, capture_output=True, timeout=15)
         assert result.returncode == 0, 'iSpindel emulator send failed'
+        stop()
+        assert start(maintenance=True)['configured'] is True
+        api('auth/login', credentials)
+        flags = api('diagnostics')
+        assert not any(flags[key] for key in ('control_enabled', 'collection_enabled', 'exports_enabled'))
+        try:
+            api(f"devices/{device['id']}/command", {'mode': 'f', 'temperature': 19})
+            raise AssertionError('Maintenance accepted a control command')
+        except urllib.error.HTTPError as error:
+            assert error.code == 400
+        assert fridge.chamber.settings['fridgeSet'] == 18
         api('auth/logout', {})
         try:
             api('resources/devices')
             raise AssertionError('Logout did not revoke session')
         except urllib.error.HTTPError as error:
             assert error.code == 401
-        print('PASS: empty database, first account, local login/logout, safe defaults, restart persistence, BrewPi command/readback/log, iSpindel ingest')
+        print('PASS: empty database, first account, local login/logout, operational defaults, explicit maintenance, restart persistence, BrewPi command/readback/log, iSpindel ingest')
     finally:
         stop()
         fridge.shutdown()

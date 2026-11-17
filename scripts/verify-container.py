@@ -28,7 +28,8 @@ with tempfile.TemporaryDirectory(prefix='fermentrack-compose-') as temp:
         sock.bind(('127.0.0.1', 0))
         port = sock.getsockname()[1]
     config = (ROOT / 'compose.rust.yml').read_text().replace('context: .', f'context: {ROOT}')
-    config = config.replace('127.0.0.1:8315:8315', f'127.0.0.1:{port}:8315')
+    # Acceptance always stays on loopback, independently of the normal LAN default.
+    config = config.replace('${FERMENTRACK_BIND_ADDRESS:-0.0.0.0}:8315:8315', f'127.0.0.1:{port}:8315')
     (folder / 'compose.yml').write_text(config)
     compose = ['docker', 'compose', '-p', 'ferm-fresh-' + secrets.token_hex(4), '-f', str(folder / 'compose.yml')]
     service = {'image': args.image}
@@ -76,7 +77,7 @@ with tempfile.TemporaryDirectory(prefix='fermentrack-compose-') as temp:
         api('auth/login', credentials)
         assert api('resources/devices') == []
         flags = api('diagnostics')
-        assert not any(flags[key] for key in ('collection_enabled', 'control_enabled', 'exports_enabled'))
+        assert all(flags[key] for key in ('collection_enabled', 'control_enabled', 'exports_enabled'))
         profile = api('resources/profiles', {'name': 'Standalone persistence check', 'data': {
             'unit': 'C', 'steps': [{'temperature': 18, 'hours': 24, 'transition': 'hold'}]}})
         docker('restart')
@@ -94,7 +95,7 @@ with tempfile.TemporaryDirectory(prefix='fermentrack-compose-') as temp:
             raise AssertionError('Session survived logout')
         except urllib.error.HTTPError as error:
             assert error.code == 401
-        print('PASS: standalone Compose, fresh volume, UI, local setup/login/logout, disabled hardware defaults, persisted account/profile after restart, non-root, healthcheck')
+        print('PASS: standalone Compose, fresh volume, UI, local setup/login/logout, operational defaults, persisted account/profile after restart, non-root, healthcheck')
     except Exception:
         print(docker('logs', '--tail', '40'))
         raise
