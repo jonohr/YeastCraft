@@ -85,3 +85,20 @@ reviewed. Generated state/databases/build products are ignored. The npm manifest
 Public upstream authorship/contact details in third-party notices are intentional
 attribution, not the installation owner's private data. Repeat the history scan
 on the exact release commit after any later additions.
+
+## Prepared bundle and final checks
+
+The source preparation command completed successfully for commit `8f59a8b`. The
+archive contains 205 locked crate sources, 131 npm package archives, eleven original
+production JavaScript source archives, matching Rust library sources and three
+Debian source packages (eight descriptor/source files). Debian source hashes were
+verified again from the finished archive. Artifact name, size and SHA256 are recorded
+in [source-bundle-verification.json](security/source-bundle-verification.json).
+The bundle is prepared locally, not published; regenerate it for the selected
+release commit when publishing later changes.
+
+Final Gitleaks scan at that commit: 15 commits, about 3.64 MB, zero findings.
+The exact dependency texts were checked against their content hashes. All three
+images passed fresh Compose installation after notice packaging. The ARM64 runtime
+binary's SHA256 remains `b99fbbb3e7ec5c816e464f447e63301271ffa77c16576f92ae2a84cb57469340`,
+identical to the binary tested natively on the Raspberry Pi.
