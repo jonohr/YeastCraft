@@ -83,7 +83,7 @@ export function BrewfatherConnectionForm({
           {error}
         </p>
       )}
-      <div className="form-actions">
+      <div className="form-actions brewfather-connection-actions">
         <button
           type="button"
           className="secondary"
@@ -167,7 +167,7 @@ export default function BrewfatherConnection() {
         </p>
       )}
       {message && <p role="status">{message}</p>}
-      <div className="form-actions">
+      <div className="form-actions brewfather-connection-actions">
         <button disabled={busy || !status} onClick={() => setEdit(true)}>
           {status?.connected ? "Replace credentials" : "Connect Brewfather"}
         </button>

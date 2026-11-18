@@ -3126,3 +3126,7 @@ input[type="checkbox"] {
 @media (max-width: 480px) {
   .topbar .workspace-badge { display: none; }
 }
+
+/* Connection actions must remain inside narrow cards and dialogs. */
+.brewfather-connection-actions { flex-wrap: wrap; justify-content: flex-start; }
+.brewfather-connection-actions > button { max-width: 100%; }

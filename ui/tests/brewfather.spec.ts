@@ -159,6 +159,12 @@ test("Brewfather connection masks secrets, tests before saving and preserves fai
     page.getByRole("button", { name: "Replace credentials" }),
   ).toBeVisible();
   expect(connected).toBeTruthy();
+  for (const name of ["Replace credentials", "Test connection", "Disconnect"]) {
+    const bounds = await page.getByRole("button", { name, exact: true }).boundingBox();
+    expect(bounds).not.toBeNull();
+    expect(bounds!.x).toBeGreaterThanOrEqual(0);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  }
   await page.getByRole("button", { name: "Replace credentials" }).click();
   await expect(page.getByLabel("API key", { exact: true })).toHaveValue("");
   await page.getByLabel("User ID", { exact: true }).fill("synthetic-user");

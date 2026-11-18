@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-//! Read-only Brewfather batch preview. No database or controller access.
+//! Read-only Brewfather preview with encrypted local credentials. No controller access.
 use crate::{
     ApiError, App,
     credential_store::{self, Credentials},
