@@ -21,6 +21,10 @@ For vulnerabilities, follow [the security reporting guidance](SECURITY.md).
 
 ## Working on the code
 
+Use a branch and a pull request rather than pushing directly to `main`. Wait for
+CI and release-candidate assembly to pass before merging. See the
+[CI and release guide](docs/RELEASING.md) for checks and maintainer steps.
+
 Keep changes focused and explain what changed and how you checked it. Link the
 relevant issue in your pull request. Preserve attribution and license notices;
 small, reviewable contributions are easier to get over the finish line.

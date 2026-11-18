@@ -1,6 +1,6 @@
 # Minimal container and ARM builds
 
-Verified 2026-11-17. The final image starts from `scratch` and contains the Rust
+The standalone image starts from `scratch` and contains the Rust
 binary, static interface, CA bundle, required glibc/libgcc libraries and loader,
 license notices, user identity and package provenance. Debian is only a library
 assembly stage. There is no shell, apt, OpenSSL executable, Node or Python runtime.
@@ -13,20 +13,23 @@ Normal startup enables collection/control/export workers; equipment and destinat
 are configured in the app. Use `--maintenance` explicitly for restore or offline
 inspection. Compose publishes port 8315 on all IPv4 host interfaces by default;
 `FERMENTRACK_BIND_ADDRESS=127.0.0.1` selects loopback.
-The existing allocator setting is retained. This is a smaller disk image, not a
+The runtime uses a glibc allocator setting to release large temporary buffers. This is a smaller disk image, not a
 claim that RAM usage falls by the same percentage.
 
-| Platform | Before, Debian slim | Minimal image | Validation |
-| --- | ---: | ---: | --- |
-| linux/amd64 | 92.29 MB | 12.69 MB | Native x86 Docker |
-| linux/arm64 | 113.90 MB | 11.34 MB | QEMU Docker; native app on Pi 5 |
-| linux/arm/v7 | 69.28 MB | 9.27 MB | QEMU user emulation |
+| Platform     | Approximate image size | Verification                            |
+| ------------ | ---------------------: | --------------------------------------- |
+| linux/amd64  |                  13 MB | Native x86 Docker                       |
+| linux/arm64  |                  11 MB | QEMU Docker; native application on Pi 5 |
+| linux/arm/v7 |                   9 MB | QEMU Docker                             |
 
-Sizes include the complete compressed dependency notice archive.
-Sizes are Docker image inspect sizes in decimal MB, not compressed registry
-transfer sizes. Native ARM Docker installation, ARMv7 hardware, USB/Bluetooth and power-loss
-behavior remain unverified. ARM64 application acceptance also passed on a physical
-Raspberry Pi 5 with a 16 KiB page size; see VALIDATION.md. No registry image has been published.
+Sizes are rounded Docker image-inspect sizes, not compressed download sizes, and
+include dependency notices. Exact candidates have image IDs in their release
+manifest. Native ARM Docker, physical ARMv7, USB/Bluetooth and power-loss behavior
+remain outside the test evidence. See [validation](VALIDATION.md).
+
+[CI and releasing](RELEASING.md) covers tested image archives, matching source and
+the GHCR publication step. A naming example is not an already published version;
+check the repository's Releases page for available downloads.
 
 ## Build locally
 

@@ -1,6 +1,6 @@
 # iSpindel emulator
 
-Standalone Rust CLI, independent of Fermentrack's runtime. Sends HTTP JSON using
+Standalone Rust CLI, independent of the Fermentrack RS server. Sends HTTP JSON using
 the iSpindel field names accepted by the Rust receiver. No daemon, Docker or Node
 required. Without `--url`, it prints redacted sample packets and sends nothing.
 The default is one sample; `--count 0` runs until Ctrl+C.
@@ -56,11 +56,11 @@ cargo build --locked
 python3 verify.py
 ```
 
-`verify.py` uses a temporary database and an isolated loopback Fermentrack process
-with collection enabled, control/export disabled. It checks ingest, angle/SG/source,
+`verify.py` uses a temporary database and an isolated loopback Fermentrack RS process
+with collection enabled and no physical controller or external export destination configured. It checks ingest, angle/SG/source,
 history, unknown-token rejection, preview redaction and redirect/error handling.
 It never reads production state or credentials. Build the parent Rust server first
-(`cargo build --manifest-path ../../rust/Cargo.toml`).
+(`cargo build --locked --manifest-path ../../rust/Cargo.toml`).
 
 ## Calibrate the emulated sensor
 
@@ -99,12 +99,11 @@ The fitter reports RMSE on the reference points, not independent accuracy.
 
 In modeled mode `--gravity` and scenario `gravity` mean true liquid SG. The scenario's
 angle is ignored; the independent sensor model computes it. Explicit `--angle`
-is rejected in this mode. With neither model nor calibration supplied, the original
-independent angle/SG packet mode still works. Add `--url` and `--token-file` to send
+is rejected in this mode. With neither model nor calibration supplied, independent angle/SG packet mode is used. Add `--url` and `--token-file` to send
 modeled readings to the test sensor. Restart with the new calibration file to apply
 it. Calibration files are not reloaded while running.
 
-The Fermentrack calibration view can also use these angles and manual known SG
+The Fermentrack RS calibration view can also use these angles and manual known SG
 values as references. Its coefficient fields map as follows: constant_term=d,
 first_degree_coefficient=c, second_degree_coefficient=b, third_degree_coefficient=a.
 Copy those coefficients into the emulator calibration file to test the same formula

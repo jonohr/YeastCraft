@@ -98,7 +98,7 @@ The standalone Python emulator sends real HTTP requests to a disposable local-au
 RS process. Acceptance checks token isolation/rotation, content types, payload size,
 replay across restart, source freshness, manual measurements, batch history and
 rejection of automatic Tilt profile conditions. Browser tests cover setup and
-connection tools on desktop and mobile. See tools/tilt-emulator/README.md.
+connection tools on desktop and mobile. See the [Tilt emulator guide](../tools/tilt-emulator/README.md).
 
 Actual sender compatibility, firmware-specific differences, Wi-Fi/BLE behavior and
 physical standard/Pro hardware remain unverified. Please report sender software and

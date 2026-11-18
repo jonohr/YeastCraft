@@ -1,6 +1,5 @@
 name: CI
 on:
-  pull_request:
   workflow_dispatch:
   workflow_call:
 permissions:
@@ -17,7 +16,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: '22'
+          node-version: "22"
           cache: npm
           cache-dependency-path: ui/package-lock.json
       - name: Install pinned Rust toolchain
@@ -27,6 +26,8 @@ jobs:
           docker run --rm --network none -v "$PWD:/repo:ro"
           ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
           git /repo --redact --no-banner
+      - name: Release packaging guard tests
+        run: python3 scripts/test-release.py
       - name: Rust tests and lint
         run: |
           cargo test --locked --manifest-path rust/Cargo.toml
@@ -78,7 +79,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: '22'
+          node-version: "22"
       - name: Prepare host test tools
         run: |
           rustup toolchain install 1.99.1 --profile minimal --no-self-update
@@ -131,3 +132,15 @@ jobs:
           name: security-${{ matrix.arch }}
           path: ${{ runner.temp }}/audit/*.json
           retention-days: 7
+  passed:
+    name: CI passed
+    if: always()
+    needs: [checks, images]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require every check
+        env:
+          CHECKS: ${{ needs.checks.result }}
+          IMAGES: ${{ needs.images.result }}
+        run: test "$CHECKS" = success && test "$IMAGES" = success
