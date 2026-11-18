@@ -1,3 +1,4 @@
+import BrewfatherConnection from "./brewfather-connection";
 import ProtocolLog from "./protocol-log";
 import BatchStart from "./batch-start";
 import { batchStatus, newestFirst, profileSteps } from "./workflow";
@@ -878,6 +879,7 @@ function Collection({ kind }: { kind: string }) {
           Add
         </Button>
       </Heading>
+      {kind === "integrations" && <BrewfatherConnection />}
       {kind === "integrations" && (
         <section className="card">
           <h2>Brewfather batches</h2>

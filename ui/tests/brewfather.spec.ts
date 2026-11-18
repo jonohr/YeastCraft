@@ -105,3 +105,76 @@ test("Brewfather preview in the application: plan, final choice and review witho
   await expect(page.locator("#yc-blocked")).toContainText("no duration");
   await expect(page.locator("#yc-plan")).toBeHidden();
 });
+
+test("Brewfather connection masks secrets, tests before saving and preserves failed replacement", async ({
+  page,
+  request,
+}) => {
+  const credentials = {
+    username: "browser-test",
+    password: "browser-test-password-123",
+  };
+  if (!(await (await request.get("/api/v1/auth/status")).json()).configured)
+    await request.post("/api/v1/auth/setup", { data: credentials });
+  await page.goto("/");
+  await page.getByLabel("Username").fill(credentials.username);
+  await page.getByLabel("Password", { exact: true }).fill(credentials.password);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
+  let connected = false,
+    fail = false;
+  await page.route("**/api/v1/brewfather/connection", async (route) => {
+    if (route.request().method() === "PUT") {
+      const body = route.request().postDataJSON();
+      expect(body.user_id).toBe("synthetic-user");
+      expect(body.api_key).toBe("synthetic-key");
+      if (fail) {
+        await route.fulfill({
+          status: 503,
+          json: {
+            error: "Brewfather access denied. Check batches.read permission.",
+          },
+        });
+        return;
+      }
+      connected = true;
+    }
+    await route.fulfill({ json: { connected, encrypted: connected } });
+  });
+  await page.goto("/integrations");
+  await page
+    .getByRole("button", { name: "Connect Brewfather", exact: true })
+    .click();
+  await page.getByLabel("User ID", { exact: true }).fill("synthetic-user");
+  await page.getByLabel("API key", { exact: true }).fill("synthetic-key");
+  await expect(page.getByLabel("API key", { exact: true })).toHaveAttribute(
+    "type",
+    "password",
+  );
+  await page
+    .getByRole("button", { name: "Connect Brewfather", exact: true })
+    .last()
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Replace credentials" }),
+  ).toBeVisible();
+  expect(connected).toBeTruthy();
+  await page.getByRole("button", { name: "Replace credentials" }).click();
+  await expect(page.getByLabel("API key", { exact: true })).toHaveValue("");
+  await page.getByLabel("User ID", { exact: true }).fill("synthetic-user");
+  await page.getByLabel("API key", { exact: true }).fill("synthetic-key");
+  fail = true;
+  await page.getByRole("button", { name: "Test & replace connection" }).click();
+  await expect(page.getByRole("alert")).toContainText("access denied");
+  expect(connected).toBeTruthy();
+  expect(
+    await page.evaluate(
+      () => !JSON.stringify(localStorage).includes("synthetic-key"),
+    ),
+  ).toBeTruthy();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBeTruthy();
+});

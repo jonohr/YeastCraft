@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0-only
 //! Read-only Brewfather batch preview. No database or controller access.
-use crate::ApiError;
+use crate::{
+    ApiError, App,
+    credential_store::{self, Credentials},
+};
 use axum::{
     Json,
-    extract::{Path, Query},
+    extract::{Path, Query, State},
     http::StatusCode,
 };
 use serde::Deserialize;
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
 use std::{
     collections::VecDeque,
     sync::OnceLock,
@@ -47,33 +51,88 @@ struct Client {
     cache: VecDeque<Cached>,
     calls: VecDeque<Instant>,
     blocked: Option<Instant>,
+    identity: Option<[u8; 32]>,
+    #[cfg(test)]
+    test_base: Option<String>,
 }
 static CLIENT: OnceLock<Mutex<Client>> = OnceLock::new();
 
-fn credentials() -> Result<(String, String), ApiError> {
-    let path = std::env::var("YEASTCRAFT_BREWFATHER_CREDENTIALS_FILE")
-        .map_err(|_| unavailable("Brewfather is not connected. Configure the server credential file with batches.read access."))?;
-    let data = std::fs::read_to_string(path)
-        .map_err(|_| unavailable("Cannot read the Brewfather server credential file."))?;
-    let mut user = None;
-    let mut key = None;
-    for line in data.lines() {
-        if let Some((name, value)) = line.split_once('=') {
-            let value = value.trim().trim_matches(['\'', '"']).to_string();
-            match name.trim() {
-                "BREWFATHER_USER_ID" => user = Some(value),
-                "BREWFATHER_API_KEY" => key = Some(value),
-                _ => {}
-            }
-        }
-    }
-    match (user, key) {
-        (Some(u), Some(k)) if !u.is_empty() && !k.is_empty() => Ok((u, k)),
-        _ => Err(unavailable("Brewfather server credentials are incomplete.")),
+fn credentials(a: &App) -> Result<Credentials, ApiError> {
+    credential_store::load(&a.db, &credential_store::key_path(&a.db))
+        .map_err(|_| unavailable("Cannot unlock Brewfather credentials. Restore the encryption key or disconnect and reconnect."))?
+        .ok_or_else(|| unavailable("Brewfather is not connected. Connect in Integrations."))
+}
+pub async fn connection_status(State(a): State<App>) -> Result<Json<Value>, ApiError> {
+    match credential_store::load(&a.db, &credential_store::key_path(&a.db)) {
+        Ok(Some(_)) => Ok(Json(json!({"connected":true,"encrypted":true}))),
+        Ok(None) => Ok(Json(json!({"connected":false,"encrypted":false}))),
+        Err(_) => Ok(Json(
+            json!({"connected":false,"encrypted":true,"needs_reconnect":true}),
+        )),
     }
 }
+pub async fn connect(
+    State(a): State<App>,
+    Json(value): Json<Credentials>,
+) -> Result<Json<Value>, ApiError> {
+    value
+        .validate()
+        .map_err(|_| ApiError::bad("Enter a valid User ID and API key."))?;
+    let mut client = CLIENT.get_or_init(Default::default).lock().await;
+    save_connection(&mut client, &a.db, &value).await?;
+    Ok(Json(json!({"connected":true,"encrypted":true})))
+}
+async fn save_connection(
+    client: &mut Client,
+    db: &crate::db::Db,
+    value: &Credentials,
+) -> Result<(), ApiError> {
+    verify(client, value).await?;
+    credential_store::store(db, &credential_store::key_path(db), value).map_err(|_| {
+        unavailable(
+            "Could not save the encrypted connection. Check the server encryption key and storage.",
+        )
+    })?;
+    client.cache.clear();
+    Ok(())
+}
+
+pub async fn test_connection(State(a): State<App>) -> Result<Json<Value>, ApiError> {
+    let mut client = CLIENT.get_or_init(Default::default).lock().await;
+    let value = credentials(&a)?;
+    verify(&mut client, &value).await?;
+    Ok(Json(json!({"ok":true,"permission":"batches.read"})))
+}
+async fn verify(client: &mut Client, value: &Credentials) -> Result<(), ApiError> {
+    let (_, rows) = client.get("batches?limit=1", 0, value).await?;
+    if !rows.is_array() {
+        return Err(unavailable(
+            "Unexpected Brewfather response. Connection was not saved.",
+        ));
+    }
+    Ok(())
+}
+pub async fn disconnect(State(a): State<App>) -> Result<Json<Value>, ApiError> {
+    let mut client = CLIENT.get_or_init(Default::default).lock().await;
+    credential_store::remove(&a.db).map_err(|_| unavailable("Could not remove the connection."))?;
+    client.cache.clear();
+    client.identity = None;
+    Ok(Json(json!({"connected":false})))
+}
 impl Client {
-    async fn get(&mut self, path: &str, ttl: u64) -> Result<(f64, Value), ApiError> {
+    async fn get(
+        &mut self,
+        path: &str,
+        ttl: u64,
+        credentials: &Credentials,
+    ) -> Result<(f64, Value), ApiError> {
+        let identity: [u8; 32] =
+            Sha256::digest(format!("{}:{}", credentials.user_id, credentials.api_key)).into();
+        if self.identity != Some(identity) {
+            self.cache.clear();
+            self.identity = Some(identity);
+        }
+
         let now = Instant::now();
         if let Some(c) = self
             .cache
@@ -103,7 +162,6 @@ impl Client {
                 "Brewfather request budget reached. Please try again later.",
             ));
         }
-        let (user, key) = credentials()?;
         let http = reqwest::Client::builder()
             .timeout(Duration::from_secs(15))
             .redirect(reqwest::redirect::Policy::none())
@@ -112,9 +170,12 @@ impl Client {
             .map_err(|_| unavailable("Brewfather HTTP client unavailable."))?;
         self.calls.push_back(now);
         // Only callers below construct paths, with validated IDs; never an arbitrary URL.
+        let base = "https://api.brewfather.app/v2/";
+        #[cfg(test)]
+        let base = self.test_base.as_deref().unwrap_or(base);
         let response = http
-            .get(format!("https://api.brewfather.app/v2/{path}"))
-            .basic_auth(user, Some(key))
+            .get(format!("{base}{path}"))
+            .basic_auth(&credentials.user_id, Some(&credentials.api_key))
             .header("Accept", "application/json")
             .header("User-Agent", "YeastCraft")
             .send()
@@ -223,7 +284,10 @@ pub struct Page {
     #[serde(default)]
     after: String,
 }
-pub async fn batches(Query(page): Query<Page>) -> Result<Json<Value>, ApiError> {
+pub async fn batches(
+    State(a): State<App>,
+    Query(page): Query<Page>,
+) -> Result<Json<Value>, ApiError> {
     if !page.after.is_empty() && !valid_id(&page.after) {
         return Err(ApiError::bad("Invalid page cursor"));
     }
@@ -232,12 +296,9 @@ pub async fn batches(Query(page): Query<Page>) -> Result<Json<Value>, ApiError> 
     } else {
         format!("batches?limit=50&start_after={}", page.after)
     };
-    let (stamp, data) = CLIENT
-        .get_or_init(Default::default)
-        .lock()
-        .await
-        .get(&path, 300)
-        .await?;
+    let mut client = CLIENT.get_or_init(Default::default).lock().await;
+    let credentials = credentials(&a)?;
+    let (stamp, data) = client.get(&path, 300, &credentials).await?;
     let rows = data
         .as_array()
         .ok_or_else(|| unavailable("Unexpected batch list response."))?;
@@ -251,21 +312,25 @@ pub async fn batches(Query(page): Query<Page>) -> Result<Json<Value>, ApiError> 
         json!({"batches":rows.iter().map(select_batch).collect::<Vec<_>>(),"next":if rows.len()==50 {rows.last().unwrap()["_id"].clone()}else{Value::Null},"fetched":stamp}),
     ))
 }
-pub async fn batch(Path(id): Path<String>) -> Result<Json<Value>, ApiError> {
+pub async fn batch(State(a): State<App>, Path(id): Path<String>) -> Result<Json<Value>, ApiError> {
     if !valid_id(&id) {
         return Err(ApiError::bad("Invalid batch ID"));
     }
     let mut client = CLIENT.get_or_init(Default::default).lock().await;
+    let credentials = credentials(&a)?;
     let (stamp, b) = client
         .get(
             &format!("batches/{id}?include=recipe.name,recipe.fermentation,measuredOg,measuredFg"),
             60,
+            &credentials,
         )
         .await?;
     if b["_id"] != id {
         return Err(unavailable("Unexpected batch response."));
     }
-    let (read_stamp, rows) = client.get(&format!("batches/{id}/readings"), 60).await?;
+    let (read_stamp, rows) = client
+        .get(&format!("batches/{id}/readings"), 60, &credentials)
+        .await?;
     let readings = select_readings(&rows)?;
     let candidate = match translate(&b["recipe"]["fermentation"]) {
         Ok(c) => c,
@@ -341,9 +406,67 @@ fn translate(source: &Value) -> Result<Value, String> {
 mod tests {
     use super::*;
     #[tokio::test]
+    async fn connection_save_tests_before_replace_and_does_not_follow_redirects() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let t = tempfile::tempdir().unwrap();
+        let db = crate::db::Db::init(t.path().join("test.sqlite")).unwrap();
+        let original = Credentials {
+            user_id: "before".into(),
+            api_key: "original-key".into(),
+        };
+        credential_store::store(&db, &credential_store::key_path(&db), &original).unwrap();
+        for status in [401, 302, 200] {
+            let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let base = format!("http://{}/", listener.local_addr().unwrap());
+            let server = tokio::spawn(async move {
+                let (mut socket, _) = listener.accept().await.unwrap();
+                let mut request = [0; 4096];
+                let n = socket.read(&mut request).await.unwrap();
+                assert!(
+                    String::from_utf8_lossy(&request[..n]).starts_with("GET /batches?limit=1 ")
+                );
+                let body = if status == 200 {
+                    "[]"
+                } else {
+                    "do-not-expose-upstream-body"
+                };
+                socket.write_all(format!("HTTP/1.1 {status} Test\r\nContent-Length: {}\r\nLocation: http://127.0.0.1:1/forbidden\r\nConnection: close\r\n\r\n{body}",body.len()).as_bytes()).await.unwrap();
+            });
+            let mut client = Client {
+                test_base: Some(base),
+                ..Client::default()
+            };
+            let replacement = Credentials {
+                user_id: "after".into(),
+                api_key: "replacement-key".into(),
+            };
+            let result = save_connection(&mut client, &db, &replacement).await;
+            server.await.unwrap();
+            let stored = credential_store::load(&db, &credential_store::key_path(&db))
+                .unwrap()
+                .unwrap();
+            if status == 200 {
+                assert!(result.is_ok());
+                assert_eq!(stored.api_key, "replacement-key");
+                assert!(client.cache.is_empty());
+            } else {
+                let error = result.err().unwrap().1;
+                assert!(!error.contains("do-not-expose"));
+                assert_eq!(stored.api_key, "original-key");
+            }
+        }
+    }
+    #[tokio::test]
     async fn cache_and_budget_do_not_call_upstream() {
         let now = Instant::now();
-        let mut c = Client::default();
+        let credentials = Credentials {
+            user_id: "fake".into(),
+            api_key: "fake".into(),
+        };
+        let mut c = Client {
+            identity: Some(Sha256::digest(b"fake:fake").into()),
+            ..Client::default()
+        };
         c.cache.push_back(Cached {
             path: "batches?limit=50".into(),
             at: now,
@@ -351,7 +474,7 @@ mod tests {
             body: b"[]".to_vec(),
         });
         let (stamp, rows) = c
-            .get("batches?limit=50", 300)
+            .get("batches?limit=50", 300, &credentials)
             .await
             .unwrap_or_else(|_| panic!("cached request failed"));
         assert_eq!(stamp, 123.);
@@ -359,7 +482,7 @@ mod tests {
         assert!(c.calls.is_empty());
         c.calls = std::iter::repeat_n(now, 100).collect();
         assert!(
-            c.get("uncached", 60)
+            c.get("uncached", 60, &credentials)
                 .await
                 .err()
                 .unwrap()
@@ -368,7 +491,7 @@ mod tests {
         );
         c.blocked = Some(now + Duration::from_secs(60));
         assert!(
-            c.get("uncached", 60)
+            c.get("uncached", 60, &credentials)
                 .await
                 .err()
                 .unwrap()

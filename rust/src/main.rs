@@ -3,6 +3,7 @@ mod auth;
 mod backup;
 mod brewfather;
 mod calibration;
+mod credential_store;
 mod db;
 mod gravity_profile;
 mod import;
@@ -130,6 +131,17 @@ fn router(a: App, static_dir: PathBuf) -> Router {
         )
         .route("/measurements/{source}", get(measurements))
         .route("/overview", get(overview))
+        .route(
+            "/brewfather/connection",
+            get(brewfather::connection_status)
+                .put(brewfather::connect)
+                .delete(brewfather::disconnect)
+                .layer(DefaultBodyLimit::max(4096)),
+        )
+        .route(
+            "/brewfather/connection/test",
+            post(brewfather::test_connection),
+        )
         .route("/brewfather/batches", get(brewfather::batches))
         .route("/brewfather/batches/{id}", get(brewfather::batch))
         .route("/diagnostics", get(diagnostics))
@@ -644,6 +656,20 @@ mod tests {
                 .0,
             StatusCode::UNAUTHORIZED
         );
+        for method in ["GET", "PUT", "DELETE"] {
+            assert_eq!(
+                request(
+                    &app,
+                    "/api/v1/brewfather/connection",
+                    method,
+                    json!({"user_id":"fake","api_key":"fake"}),
+                    None
+                )
+                .await
+                .0,
+                StatusCode::UNAUTHORIZED
+            );
+        }
         let credentials = json!({"username":"test","password":"twelve-characters-test"});
         assert_eq!(
             request(
@@ -701,6 +727,26 @@ mod tests {
             .0,
             StatusCode::METHOD_NOT_ALLOWED
         );
+        let (status, _, body) = request(
+            &app,
+            "/api/v1/brewfather/connection",
+            "GET",
+            Value::Null,
+            Some(cookie),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(body, json!({"connected":false,"encrypted":false}));
+        let (status, _, body) = request(
+            &app,
+            "/api/v1/brewfather/connection",
+            "PUT",
+            json!({"user_id":"bad:user","api_key":"never-return-this"}),
+            Some(cookie),
+        )
+        .await;
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        assert!(!body.to_string().contains("never-return-this"));
         let (_, _, e) = request(
             &app,
             "/api/v1/resources/devices",

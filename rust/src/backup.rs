@@ -26,7 +26,7 @@ fn work(a: &App) -> Result<std::path::PathBuf> {
 pub async fn download(State(a): State<App>) -> Result<Response, ApiError> {
     let file =
         tempfile::NamedTempFile::new_in(work(&a)?).map_err(|e| ApiError::bad(&e.to_string()))?;
-    let file=a.db.run(move|c|{c.backup(rusqlite::DatabaseName::Main,file.path(),None)?;let clean=Connection::open(file.path())?;clean.execute_batch("PRAGMA wal_checkpoint(TRUNCATE); PRAGMA journal_mode=DELETE; DELETE FROM users; DELETE FROM sessions; DELETE FROM audit; CREATE TABLE IF NOT EXISTS backup_format(version INTEGER); DELETE FROM backup_format; INSERT INTO backup_format VALUES(1); VACUUM;")?;Ok(file)}).await?;
+    let file=a.db.run(move|c|{c.backup(rusqlite::DatabaseName::Main,file.path(),None)?;let clean=Connection::open(file.path())?;clean.execute_batch("PRAGMA wal_checkpoint(TRUNCATE); PRAGMA journal_mode=DELETE; DELETE FROM users; DELETE FROM sessions; DELETE FROM audit; DROP TABLE IF EXISTS service_credentials; CREATE TABLE IF NOT EXISTS backup_format(version INTEGER); DELETE FROM backup_format; INSERT INTO backup_format VALUES(1); VACUUM;")?;Ok(file)}).await?;
     let input = tokio::fs::File::open(file.path())
         .await
         .map_err(|e| ApiError::bad(&e.to_string()))?;
