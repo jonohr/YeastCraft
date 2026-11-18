@@ -41,6 +41,7 @@ to run it. Your fridge already has enough humming away.
 
 - BrewPi temperature collection and confirmed beer/chamber setpoints over TCP or serial.
 - Timed Hold/Ramp profiles and gravity-based step conditions.
+- Start a batch manually, with a saved YC profile, or with a Brewfather fermentation plan.
 - iSpindel ingestion, manual gravity readings and calibration from reference samples.
 - Experimental Tilt cloud HTTP and legacy TiltBridge receivers (hardware unverified).
 - Batch history, charts, controller-state bands and a bounded raw protocol log.

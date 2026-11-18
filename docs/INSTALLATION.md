@@ -45,9 +45,10 @@ Keep that name stable between batches; associate the device with your batch in
 Brewfather. Synthetic test readings belong in a separate, deliberately chosen test
 device, not your fermentation history. [Brewfather test evidence](VALIDATION.md#brewfather-delivery).
 
-Read-only Brewfather batch/profile preview is available from Integrations.
-See [Brewfather connection setup and limits](BREWFATHER.md). Creating a YC batch
-from that preview and measurement synchronization are not yet implemented.
+Choose **Brewfather** in the two-step batch-start flow to use a batch's measured
+OG and fermentation plan. Connect there or under Settings → Integrations.
+YC starts a new local fermentation; historical data and measurement
+synchronization are not imported. See [setup and limits](BREWFATHER.md).
 
 ## Network access and authentication
 

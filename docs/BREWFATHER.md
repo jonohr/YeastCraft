@@ -1,27 +1,41 @@
-# Brewfather batch preview
+# Brewfather connection and batch start
 
-Open **Settings → Integrations → Browse Brewfather batches** to read a batch's
-OG/FG, readings and fermentation plan. The preview runs inside YeastCraft's Rust
-server, with the same authentication as other application APIs. No Python or
-additional service is needed.
+Choose **Add** under Batches (or **New batch** on Overview), then choose
+**Manual**, **YC profile**, or **Brewfather**. This is one two-step flow:
+choose a temperature plan, then review the batch and equipment before starting.
 
-Choose a batch, then review **How YC would run this batch**. The timeline starts
-at day zero for a new fermentation. Holds and ramps have separate durations;
-a Brewfather ramp adds time before its hold. The final-temperature selector
-previews either keeping the final target or switching temperature control off.
-Changing it makes no server write.
+Brewfather shows recent batches as cards, newest brew date first. **Show more
+batches** reveals older entries. Selecting one reads its name, measured OG and
+fermentation profile; missing OG stays blank. The review lets you edit the name
+and OG, choose equipment and choose whether to hold the final temperature or
+switch control off. Invalid profiles require another choice or a local YC plan.
 
-An initial ramp has no previous target to start from: YeastCraft omits it,
-sets the first target immediately and keeps the specified hold duration. This
-adjustment is displayed. Pressure settings are excluded with a notice.
-Zero-duration steps without a usable ramp require review. The candidate targets
-beer temperature. Hold time starts on step entry, not when the liquid reaches
-the setpoint. Gravity conditions are not inferred from timed Brewfather steps.
+No history is imported in this flow and no Brewfather batch is modified. YC
+starts a new local fermentation from the first step. **Save draft** preserves
+the selected plan, OG and equipment without assigning a profile or sending a
+command. Reopening the draft retains the choice. **Start batch** makes a local
+copy of a Brewfather profile and assigns it using YC's existing profile engine.
+A running schedule does not need continued access to Brewfather. This is not
+bidirectional synchronization; the existing **Brewfather export** is separate.
 
-This first integration is read-only. It does not create a YC batch/profile,
-start equipment, synchronize readings or import historical batches. Charts
-show the readings returned by Brewfather for inspection only; full historical
-coverage is not assumed. The existing **Brewfather export** remains separate.
+Holds and ramps have separate durations: a Brewfather ramp adds time before its
+hold. The review shows the resulting curve and expandable steps. An initial
+ramp has no previous target: YC omits it with notice, sets the first target and
+keeps its hold time. Pressure is excluded with notice. Zero-duration steps
+without a usable ramp need review. Translated profiles target beer temperature
+in Celsius; the controller engine converts to the configured controller unit.
+Hold time starts on step entry, not when the liquid reaches the target. Gravity
+conditions are not inferred from timed Brewfather steps.
+
+Starting validates controller readiness and active-batch conflicts. A failed
+command leaves a planned batch for retry. If profile assignment succeeds but
+saving active status fails, retry completes that batch without reassigning the
+profile. Reopening also detects the same saved profile already assigned to the
+chosen controller. A different assigned profile requires manual review.
+
+The older diagnostic preview remains available directly at `/brewfather/`; it
+can inspect readings, but it is no longer the entry point in Settings. It is
+separate from starting batches and makes no control changes.
 
 ## Connect your account
 
@@ -34,8 +48,9 @@ batches or temperature control.
 
 The API key input is masked and never prefilled from the server. No credential
 values are returned by the status, save or test APIs, or stored in browser local
-storage. TLS must protect remote access. The reusable connection form is ready
-for the planned batch-start flow; that flow remains a separate design change.
+storage. TLS must protect remote access. If no connection exists when choosing
+Brewfather during batch start, the same connection form appears there without
+leaving the flow. Cancel returns to Manual.
 
 ## Encryption and recovery
 
@@ -65,7 +80,10 @@ created host backups may still contain the former plaintext credential file.
 
 ## Request and memory limits
 
-Requests happen when browsing or refreshing, without background polling. Batch
+Requests happen when browsing or refreshing, without background polling.
+The start-plan endpoint fetches only the batch/profile, never readings. Lists
+use Brewfather's documented descending brewDate ordering and pagination
+([API documentation](https://docs.brewfather.app/api)). Batch
 lists are cached for five minutes, selected data for one minute. Upstream GETs
 are limited to 100 per hour per process. HTTP failures trigger a cooldown, with
 Retry-After honored up to one day. Redirects are refused; only fixed Brewfather
@@ -81,6 +99,7 @@ engine, initial ramps, pressure omission, missing/invalid/zero durations,
 fractional and ramp-only steps, final hold/off, data projection, readings,
 cache and request limits. Route tests enforce login, cursor validation and
 GET-only access. Mobile/desktop browser tests cover connection errors, batch
-selection, notices, timeline and final behavior without writes. Tests never use
+selection, draft restoration, unit conversion, final behavior and recovery after
+a failed batch activation without repeated profile assignment. Tests never use
 an account or physical controller. Real-account acceptance is a separate local
 deployment check.
