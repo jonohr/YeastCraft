@@ -46,7 +46,7 @@ Brewfather. Synthetic test readings belong in a separate, deliberately chosen te
 device, not your fermentation history. [Brewfather test evidence](VALIDATION.md#brewfather-delivery).
 
 Brewfather batch/profile import and gravity synchronization are
-[planned](https://github.com/jonohr/fermentrack-rs/issues/1), not currently available.
+[planned](https://github.com/jonohr/YeastCraft/issues/1), not currently available.
 
 ## Network access and authentication
 

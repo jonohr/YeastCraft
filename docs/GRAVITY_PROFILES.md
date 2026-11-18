@@ -52,7 +52,7 @@ completion date when gravity conditions make the duration unknown.
 For now, automatic SG conditions require the iSpindel freshness and confirmation
 windows above. A sensor waking only once an hour can still log readings, but will
 not satisfy those automatic conditions. Battery-friendly intervals and Brewfather
-manual-reading import are part of the [planned integration work](https://github.com/jonohr/fermentrack-rs/issues/1).
+manual-reading import are part of the [planned integration work](https://github.com/jonohr/YeastCraft/issues/1).
 
 ## Persistence and visibility
 

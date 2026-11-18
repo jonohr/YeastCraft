@@ -6,7 +6,7 @@
   <a href="#quick-start-with-docker-compose">Get started</a> ·
   <a href="docs/COMPATIBILITY.md">Supported equipment</a> ·
   <a href="docs/README.md">Guides</a> ·
-  <a href="https://github.com/jonohr/fermentrack-rs/issues">Ideas &amp; issues</a>
+  <a href="https://github.com/jonohr/YeastCraft/issues">Ideas &amp; issues</a>
 </p>
 
 # YeastCraft
@@ -70,7 +70,7 @@ minimal runtime contains no shell or Node. See [container builds](docs/CONTAINER
 Clone the repository, then build and start it:
 
 ```sh
-git clone https://github.com/jonohr/fermentrack-rs.git yeastcraft
+git clone https://github.com/jonohr/YeastCraft.git yeastcraft
 cd yeastcraft
 mkdir -p private-import
 docker compose -f compose.rust.yml up -d --build
@@ -144,9 +144,9 @@ review and licensing details.
 Brewfather export already delivers readings. Next, we would like to bring a batch's
 fermentation plan and manual gravity readings back into YeastCraft, so you can plan in
 Brewfather and let YeastCraft run the chamber. That is **planned, not implemented**:
-[follow the integration proposal](https://github.com/jonohr/fermentrack-rs/issues/1).
+[follow the integration proposal](https://github.com/jonohr/YeastCraft/issues/1).
 
-Found a rough edge? Have equipment we have not tried? [Open an issue](https://github.com/jonohr/fermentrack-rs/issues).
+Found a rough edge? Have equipment we have not tried? [Open an issue](https://github.com/jonohr/YeastCraft/issues).
 A clear description or a careful hardware test is just as welcome as code.
 
 ## License and attribution

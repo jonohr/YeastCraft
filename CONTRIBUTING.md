@@ -14,7 +14,7 @@ early project; thank you for taking a look.
 - **Tried new equipment?** Tell us what you physically checked, and what you only
   simulated. Successful tests and awkward surprises are both useful.
 
-[Open an issue](https://github.com/jonohr/fermentrack-rs/issues), or join an existing
+[Open an issue](https://github.com/jonohr/YeastCraft/issues), or join an existing
 one. For larger changes, agree on the scope there before spending a weekend on it.
 Keep tokens, receiving URLs, databases and private brewery histories out of reports.
 For vulnerabilities, follow [the security reporting guidance](SECURITY.md).

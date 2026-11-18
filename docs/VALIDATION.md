@@ -4,7 +4,7 @@ This preview has automated checks and limited physical-hardware experience.
 The distinction matters: a simulator can check a command sequence, but it cannot
 tell us how your fermenter responds to cooling.
 
-Evidence reviewed 2026-11-18. [GitHub Actions](https://github.com/jonohr/fermentrack-rs/actions)
+Evidence reviewed 2026-11-18. [GitHub Actions](https://github.com/jonohr/YeastCraft/actions)
 provides results for individual source revisions. [Compatibility](COMPATIBILITY.md)
 is the concise equipment/support reference; [installation](INSTALLATION.md) is
 the place to start using the app.
