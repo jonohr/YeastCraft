@@ -1,4 +1,4 @@
-# Fermentrack RS
+# YeastCraft
 
 Read README.md and docs/COMPATIBILITY.md before changing behavior. New code is
 GPL-3.0-only. Preserve NOTICE.md, upstream attribution and license notices.

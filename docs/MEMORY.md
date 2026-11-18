@@ -1,6 +1,6 @@
 # Memory usage
 
-RS is designed for a modest fermentation server. Here is what we measured, what
+YeastCraft is designed for a modest fermentation server. Here is what we measured, what
 those numbers mean, and where they stop being useful.
 
 ## Standalone runtime
@@ -34,8 +34,8 @@ product variants.
 ## Our experience replacing Fermentrack
 
 Our original Fermentrack installation used approximately **490 MiB** in Docker
-snapshots. RS has been substantially lighter in that installation, but we did not
-run a matched original-versus-RS benchmark. Hardware coverage, features, data,
+snapshots. YeastCraft has been substantially lighter in that installation, but we did not
+run a matched original-versus-YeastCraft benchmark. Hardware coverage, features, data,
 authentication and workload affect the comparison; no universal reduction ratio
 or full feature parity is claimed.
 

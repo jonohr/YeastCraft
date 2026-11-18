@@ -37,7 +37,7 @@ with tempfile.TemporaryDirectory(prefix='rs-tilt-test-') as temp:
         return data
     def start(enabled=True):
         global proc
-        proc = subprocess.Popen([str(ROOT/'rust/target/debug/fermentrack-rs'), '--db', str(Path(temp)/'test.sqlite'),
+        proc = subprocess.Popen([str(ROOT/'rust/target/debug/yeastcraft'), '--db', str(Path(temp)/'test.sqlite'),
             '--listen', f'127.0.0.1:{port}', '--static', str(ROOT/'ui/dist'), '--import-root', temp,
             *([] if enabled else ['--maintenance'])], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         for _ in range(100):

@@ -208,7 +208,9 @@ function Auth({
       </section>
       <section className="auth-form">
         <div className="auth-inner">
-          <div className="auth-form-brand"><Brand /></div>
+          <div className="auth-form-brand">
+            <Brand />
+          </div>
           <span className="eyebrow">WORKSPACE</span>
           <h2>{configured ? "Welcome back" : "Create your workspace"}</h2>
           <p>
@@ -457,7 +459,7 @@ function Heading({
   return (
     <div className="heading">
       <div>
-        <span className="eyebrow">FERMENTRACK RS</span>
+        <span className="eyebrow">YEASTCRAFT</span>
         <h1>{title}</h1>
         <p>{subtitle}</p>
       </div>
@@ -2886,6 +2888,8 @@ function Backup() {
 }
 function SettingsPage({ internalAuth }: { internalAuth: boolean }) {
   const q = useLoad(() => list("settings"));
+  const [initialized, setInitialized] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [data, setData] = useState<any>({
       unit: "C",
       gravity_unit: "SG",
@@ -2895,7 +2899,10 @@ function SettingsPage({ internalAuth }: { internalAuth: boolean }) {
     }),
     [message, setMessage] = useState("");
   useEffect(() => {
-    if (q.data?.[0]) setData({ ...defaults, ...q.data[0].data });
+    if (q.data) {
+      setData({ ...defaults, ...q.data[0]?.data });
+      setInitialized(true);
+    }
   }, [q.data]);
   return (
     <>
@@ -2908,6 +2915,8 @@ function SettingsPage({ internalAuth }: { internalAuth: boolean }) {
           <form
             onSubmit={async (e) => {
               e.preventDefault();
+              if (!initialized || q.loading || saving) return;
+              setSaving(true);
               setMessage("");
               try {
                 await save("settings", "Settings", data, q.data?.[0]?.id);
@@ -2918,6 +2927,8 @@ function SettingsPage({ internalAuth }: { internalAuth: boolean }) {
                 setMessage("Preferences saved.");
               } catch (e) {
                 setMessage((e as Error).message);
+              } finally {
+                setSaving(false);
               }
             }}
           >
@@ -2947,6 +2958,7 @@ function SettingsPage({ internalAuth }: { internalAuth: boolean }) {
                 {label}
                 <select
                   aria-label={label}
+                  disabled={!initialized || q.loading || saving}
                   value={data[key]}
                   onChange={(e) => setData({ ...data, [key]: e.target.value })}
                 >
@@ -2964,7 +2976,10 @@ function SettingsPage({ internalAuth }: { internalAuth: boolean }) {
               Display units do not change stored measurements. Control targets
               and profiles use their configured temperature units.
             </div>
-            <Button>Save preferences</Button>
+            <ErrorBox message={q.error} />
+            <Button disabled={!initialized || q.loading || saving}>
+              Save preferences
+            </Button>
             <p role="status">{message}</p>
           </form>
           {internalAuth ? (
@@ -2977,31 +2992,33 @@ function SettingsPage({ internalAuth }: { internalAuth: boolean }) {
         </section>
         <WorkspaceLinks />
       </div>
-      <section className="card" aria-labelledby="about-rs-title">
-        <h2 id="about-rs-title">About Fermentrack RS</h2>
+      <section className="card" aria-labelledby="about-yeastcraft-title">
+        <h2 id="about-yeastcraft-title">About YeastCraft</h2>
         <p>
-          An independent Rust rewrite of Fermentrack, with a redesigned interface,
-          additional features, and a focus on low resource usage.
+          An independent fermentation control and monitoring app for
+          BrewPi-compatible controllers, written in Rust with a modern interface
+          and low resource usage.
         </p>
         <p>
-          Fermentrack RS builds on the work of{" "}
+          YeastCraft builds on the work of{" "}
           <a href="https://github.com/thorrak/fermentrack">Fermentrack</a> by
           John Beeler, Fredrik Steen and contributors. Its ideas, controller
           integration and legacy data formats provided the foundation for this
           Rust and React implementation.
         </p>
         <p>
-          Controller communication relies on the{" "}
-          <a href="https://github.com/BrewPi">BrewPi</a> ecosystem and its
-          contributors. The flask and interface icons derive from{" "}
-          <a href="https://lucide.dev">Lucide</a> and{" "}
+          Temperature regulation and heating/cooling cycles run in the{" "}
+          <a href="https://github.com/BrewPi">BrewPi</a> compatible controller
+          firmware, built by its contributors. YeastCraft sends setpoints, runs
+          profiles and logs measurements. The flask and interface icons derive
+          from <a href="https://lucide.dev">Lucide</a> and{" "}
           <a href="https://feathericons.com">Feather</a>.
         </p>
         <p className="muted">
-          An independent project, not an official Fermentrack release. RS code is
-          GPL-3.0-only; upstream projects and dependencies retain their own
-          licenses. Full credits and license texts accompany the source and
-          standalone image in NOTICE.md and LICENSES.
+          An independent project, not an official Fermentrack release.
+          YeastCraft code is GPL-3.0-only; upstream projects and dependencies
+          retain their own licenses. Full credits and license texts accompany
+          the source and standalone image in NOTICE.md and LICENSES.
         </p>
       </section>
     </>

@@ -49,7 +49,7 @@ def download(url, path, digest=None, algorithm='sha256', encoded=False):
 
 
 with tempfile.TemporaryDirectory(prefix='rs-source-bundle-') as temporary:
-    root = Path(temporary) / 'fermentrack-rs-source'
+    root = Path(temporary) / 'yeastcraft-source'
     root.mkdir()
     archive = Path(temporary) / 'project.tar'
     subprocess.run(['git', 'archive', '--format=tar', '-o', str(archive), commit], cwd=ROOT, check=True)

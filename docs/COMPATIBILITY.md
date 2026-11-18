@@ -19,7 +19,7 @@ This is an early preview, not a claim of full Fermentrack feature parity.
 
 The original controller firmware controls heating/cooling cycles. Neither a
 simulated chamber nor an empty-fridge test predicts the thermal response of beer.
-One application must own the controller connection. Operation locks in RS do not
+One application must own the controller connection. Operation locks in YeastCraft do not
 detect a second application using a Wi-Fi controller.
 
 Known limitations include missing discovery, advanced controller constants,

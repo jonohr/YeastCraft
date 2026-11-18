@@ -4,7 +4,7 @@ This preview has automated checks and limited physical-hardware experience.
 The distinction matters: a simulator can check a command sequence, but it cannot
 tell us how your fermenter responds to cooling.
 
-Evidence reviewed 2026-11-17. [GitHub Actions](https://github.com/jonohr/fermentrack-rs/actions)
+Evidence reviewed 2026-11-18. [GitHub Actions](https://github.com/jonohr/YeastCraft/actions)
 provides results for individual source revisions. [Compatibility](COMPATIBILITY.md)
 is the concise equipment/support reference; [installation](INSTALLATION.md) is
 the place to start using the app.
@@ -14,7 +14,7 @@ the place to start using the app.
 | Area                 | Checks                                                                                                                       |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | Server               | 49 Rust tests; Clippy with warnings denied                                                                                   |
-| Interface            | 50 desktop/mobile Chromium tests; frontend production build                                                                  |
+| Interface            | 52 desktop/mobile Chromium tests; frontend production build                                                                  |
 | Fresh installation   | First account, login/logout, anonymous access rejection, account/profile persistence, non-root configuration and healthcheck |
 | Operational defaults | Normal worker availability, per-device configuration, explicit maintenance mode and conflicting CLI flags                    |
 | Profiles             | Timed and gravity steps, source separation, confirmations, restart persistence and target readback                           |
@@ -53,8 +53,8 @@ and state were removed; the normal installation was unchanged.
 
 This verifies delivery and account display. It does not establish long-running
 export reliability or REST synchronization. Batch association is done in Brewfather.
-The sender label is `Fermentrack RS`; the device name is the selected controller or
-sensor name. Other export services still need real-account checks.
+Payload tests cover the `YeastCraft` sender label and preservation of the selected
+controller or sensor name. Other export services still need real-account checks.
 
 ## Scope and limits
 

@@ -20,7 +20,7 @@ spec = importlib.util.spec_from_file_location('chamber', ROOT / 'tools/brewpi-em
 chamber = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(chamber)
 
-with tempfile.TemporaryDirectory(prefix='fermentrack-standalone-') as temp, chamber.Server(speed=60) as fridge:
+with tempfile.TemporaryDirectory(prefix='yeastcraft-standalone-') as temp, chamber.Server(speed=60) as fridge:
     threading.Thread(target=fridge.serve_forever, daemon=True).start()
     with socket.socket() as sock:
         sock.bind(('127.0.0.1', 0))
@@ -39,7 +39,7 @@ with tempfile.TemporaryDirectory(prefix='fermentrack-standalone-') as temp, cham
 
     def start(maintenance=False):
         global proc
-        proc = subprocess.Popen([str(ROOT / 'rust/target/debug/fermentrack-rs'),
+        proc = subprocess.Popen([str(ROOT / 'rust/target/debug/yeastcraft'),
             '--db', str(Path(temp) / 'fresh.sqlite'), '--listen', f'127.0.0.1:{port}',
             '--static', str(ROOT / 'ui/dist'), '--import-root', temp,
             *(['--maintenance'] if maintenance else [])],

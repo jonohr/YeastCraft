@@ -9,15 +9,15 @@ target "base" {
 target "amd64" {
   inherits = ["base"]
   platforms = ["linux/amd64"]
-  tags = ["fermentrack-rs:local"]
+  tags = ["yeastcraft:local"]
 }
 target "arm64" {
   inherits = ["base"]
   platforms = ["linux/arm64"]
-  tags = ["fermentrack-rs:arm64"]
+  tags = ["yeastcraft:arm64"]
 }
 target "armv7" {
   inherits = ["base"]
   platforms = ["linux/arm/v7"]
-  tags = ["fermentrack-rs:armv7"]
+  tags = ["yeastcraft:armv7"]
 }

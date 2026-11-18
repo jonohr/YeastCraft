@@ -1,16 +1,16 @@
 # Experimental Tilt HTTP receivers
 
 **Protocol tested, physical hardware unverified.** No Bluetooth adapter is needed
-by RS for these receivers. The sender still needs access to a real Tilt over BLE.
+by YeastCraft for these receivers. The sender still needs access to a real Tilt over BLE.
 Only logging, charts, batch history and manual reference readings are supported;
-automatic Tilt-based profile conditions, Tilt calibration inside RS, direct BLE,
+automatic Tilt-based profile conditions, Tilt calibration inside YeastCraft, direct BLE,
 firmware flashing and the TiltBridge 2 Fermentrack target are not implemented.
 
 ## Tilt app, Tilt Pi and Tilt Pico: custom Cloud URL
 
-1. Start RS normally; collection is available by default. See [installation](INSTALLATION.md) if you use maintenance mode.
+1. Start YeastCraft normally; collection is available by default. See [installation](INSTALLATION.md) if you use maintenance mode.
 2. Open Equipment → Gravity sensors → Add. Choose **Tilt app / Tilt Pi · Experimental**.
-3. Name the sensor, select its color and the temperature unit for display in RS.
+3. Name the sensor, select its color and the temperature unit for display in YeastCraft.
 4. Optionally enter its MAC address. If set, enable Identify by MAC on the sender;
    a color-only packet will then be rejected. Without a MAC filter, do not send
    two different physical Tilts of the same color to this receiving URL.
@@ -18,7 +18,7 @@ firmware flashing and the TiltBridge 2 Fermentrack target are not implemented.
    browser's current offset is suggested, but the sender may be somewhere else.
    Update the setting when the sender changes daylight saving time.
 6. Connect equipment. Copy the secret receiving URL into the sender's **custom
-   Cloud URL** setting. Wait for “First reading received”; RS polls automatically.
+   Cloud URL** setting. Wait for “First reading received”; YeastCraft polls automatically.
 7. Open the sensor to check its SG, temperature and history; link it to a batch
    when you want its measurements included in that batch's history.
 
@@ -29,7 +29,7 @@ they never create or rename batches and are not retained. Temperature is always
 Fahrenheit and gravity is always SG, regardless of sender display settings.
 Standard and Pro precision are preserved, including four-decimal gravity.
 
-Timepoint is the sender's local Excel/Sheets serial date. RS applies the configured
+Timepoint is the sender's local Excel/Sheets serial date. YeastCraft applies the configured
 UTC offset for validation, rejects readings older than two hours or more than five
 minutes in the future, and retains the source timestamp alongside receipt time.
 Charts use receipt time; this endpoint is not a historical import API. A persisted
@@ -47,18 +47,18 @@ The endpoint is POST `/ingest/tiltbridge/{token}` with `application/json`. The
 supported envelope is `mdns_id` and a `tilts` object keyed by color, containing
 `color`, `temp`, `tempUnit` and `gravity`. Temperature accepts explicit C/F;
 measurements may be numeric strings or numbers. Already converted SG is used as
-sent. RS does not apply an additional Tilt calibration or temperature correction.
+sent. YeastCraft does not apply an additional Tilt calibration or temperature correction.
 The pinned Local Target sender requests raw gravity from its serializer.
 
 **Current limitation: one selected color per receiving URL.** Other colors in a
 bridge packet are ignored. A bridge with only one Local Target URL can therefore
-feed one RS sensor through this integration. Multiple-color fan-out is not yet
+feed one YeastCraft sensor through this integration. Multiple-color fan-out is not yet
 implemented. Color and mDNS ID must match; this legacy format has no per-Tilt MAC.
 
-There is no measurement timestamp or unique packet ID in this format. RS uses
+There is no measurement timestamp or unique packet ID in this format. YeastCraft uses
 receipt time and suppresses identical selected readings retried within ten seconds,
 including after restart. Identical readings after that window are valid observations.
-RS cannot distinguish a stale cached sensor sample from a newly sampled unchanged
+YeastCraft cannot distinguish a stale cached sensor sample from a newly sampled unchanged
 value. This is one reason this initial integration is logging-only. Battery weeks
 are kept as weeks and are never presented as voltage.
 
@@ -95,7 +95,7 @@ Reference sources inspected on 2026-11-17:
 Rust tests independently check the manufacturer's example and upstream bridge
 shape, conversions, precision, identity, clock windows and malformed values.
 The standalone Python emulator sends real HTTP requests to a disposable local-auth
-RS process. Acceptance checks token isolation/rotation, content types, payload size,
+YeastCraft process. Acceptance checks token isolation/rotation, content types, payload size,
 replay across restart, source freshness, manual measurements, batch history and
 rejection of automatic Tilt profile conditions. Browser tests cover setup and
 connection tools on desktop and mobile. See the [Tilt emulator guide](../tools/tilt-emulator/README.md).

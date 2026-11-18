@@ -1,4 +1,4 @@
-# Only RS build inputs belong in the image build context.
+# Only YeastCraft build inputs belong in the image build context.
 *
 !Dockerfile.rust
 !LICENSE

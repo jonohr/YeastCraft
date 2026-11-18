@@ -26,7 +26,7 @@ with tempfile.TemporaryDirectory(prefix='ispindel-emulator-') as temp:
     Path(temp, 'proof').write_text(proof)
     base = f'http://127.0.0.1:{port()}'
     server = subprocess.Popen([
-        str(ROOT / 'rust/target/debug/fermentrack-rs'),
+        str(ROOT / 'rust/target/debug/yeastcraft'),
         '--db', str(Path(temp, 'test.sqlite')), '--listen', base.split('//')[1],
         '--static', str(ROOT / 'ui/dist'), '--import-root', temp,
         '--disable-internal-auth', '--proxy-proof-file', str(Path(temp, 'proof')),
@@ -35,7 +35,7 @@ with tempfile.TemporaryDirectory(prefix='ispindel-emulator-') as temp:
     def api(path, body=None):
         request = urllib.request.Request(base + '/api/v1/' + path,
             data=None if body is None else json.dumps(body).encode(),
-            headers={'x-fermentrack-proxy-proof': proof, 'Content-Type': 'application/json'})
+            headers={'x-yeastcraft-proxy-proof': proof, 'Content-Type': 'application/json'})
         with urllib.request.urlopen(request, timeout=5) as response:
             return json.load(response)
     env = {k: v for k, v in os.environ.items() if k != 'ISPINDEL_TOKEN'}

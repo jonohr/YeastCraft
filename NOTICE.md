@@ -1,17 +1,23 @@
 # Attribution
 
-Fermentrack RS builds on the ideas, protocol behavior and legacy data formats of
+YeastCraft builds on the ideas, protocol behavior and legacy data formats of
 [Fermentrack](https://github.com/thorrak/fermentrack), by John Beeler, Fredrik Steen
 and contributors. The upstream reference revision used during development was
 `1aea05b07b9445edce2f39480b03c93eced125e6`.
 
-Rust/React code, emulators and tools added for RS are GPL-3.0-only unless a file
+[BrewPi](https://github.com/BrewPi) and its contributors provide the controller
+protocol and firmware foundation. BrewPi-compatible firmware performs the actual
+temperature regulation and heating/cooling cycles; YeastCraft sends setpoints,
+runs profiles and logs measurements. Fermentrack extended BrewPi's web interface
+with equipment management and gravity-sensor workflows that informed this app.
+YeastCraft is independent of both projects and does not replace their firmware.
+
+Rust/React code, emulators and tools added for YeastCraft are GPL-3.0-only unless a file
 states otherwise. The full license is in LICENSE. The upstream Fermentrack MIT
 notice is retained in LICENSES/Fermentrack-MIT.txt. The BrewPi script's GPLv3 text
 is retained in LICENSES/BrewPi-GPL-3.0.md. These notices do not relicense upstream
 code. This repository does not include the original Python application or firmware.
 
-The geometric RS lettering is original RS artwork under GPL-3.0-only.
 The flask and interface icons derive from Lucide/Feather; their ISC notice is
 retained in design/brand/LICENSE-lucide.txt and LICENSES/Lucide-ISC.txt. Dependencies retain their own licenses,
 and Cargo/npm lockfiles identify the dependency versions.
@@ -24,7 +30,7 @@ from the original project, rather than from nonexistent commits in this reposito
 
 Dependency copyright and license texts are indexed in `LICENSES/third-party/README.md`
 and `inventory.json`. The standalone image carries them in
-`/usr/share/doc/fermentrack-rs/licenses.tar.gz`. Runtime library notices are also under
+`/usr/share/doc/yeastcraft/licenses.tar.gz`. Runtime library notices are also under
 `/usr/share/doc/`. Dependency code is not relicensed indiscriminately by this notice.
 
 The unchanged MPL-2.0-covered serialport 4.10.1 code is additionally available under

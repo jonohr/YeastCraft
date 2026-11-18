@@ -378,7 +378,7 @@ async fn backup(State(a): State<App>) -> Result<Response, ApiError> {
     Ok((
         [(
             header::CONTENT_DISPOSITION,
-            "attachment; filename=fermentrack-backup.json",
+            "attachment; filename=yeastcraft-backup.json",
         )],
         Json(v),
     )
@@ -466,7 +466,7 @@ async fn main() -> anyhow::Result<()> {
     let args = std::env::args().skip(1).collect::<Vec<_>>();
     if args.iter().any(|a| a == "--help" || a == "-h") {
         println!(
-            "Fermentrack Rust\nserve (default): --db PATH --listen ADDRESS --static DIR --import-root DIR [--secure-cookie] [--disable-internal-auth --proxy-proof-file PATH] [--maintenance] [--disable-collection] [--disable-control] [--disable-export]\nCollection, control and export workers are available by default; configure equipment and destinations in the app. --maintenance disables all three.\nimport: --db PATH --source SQLITE --data DIR [--apply] (dry run by default)\nhealthcheck | --version"
+            "YeastCraft\nserve (default): --db PATH --listen ADDRESS --static DIR --import-root DIR [--secure-cookie] [--disable-internal-auth --proxy-proof-file PATH] [--maintenance] [--disable-collection] [--disable-control] [--disable-export]\nCollection, control and export workers are available by default; configure equipment and destinations in the app. --maintenance disables all three.\nimport: --db PATH --source SQLITE --data DIR [--apply] (dry run by default)\nhealthcheck | --version"
         );
         return Ok(());
     }
@@ -523,7 +523,7 @@ async fn main() -> anyhow::Result<()> {
             .map(|a| a[1].clone())
             .unwrap_or(default.into())
     };
-    let db = Db::init(PathBuf::from(opt("--db", "state/fermentrack.sqlite")))?;
+    let db = Db::init(PathBuf::from(opt("--db", "state/yeastcraft.sqlite")))?;
     if args.first().is_some_and(|a| a == "import") {
         let src = PathBuf::from(opt("--source", ""));
         let data = PathBuf::from(opt("--data", ""));
@@ -560,7 +560,7 @@ async fn main() -> anyhow::Result<()> {
     }
     let listen = opt("--listen", "127.0.0.1:8315");
     let listener = tokio::net::TcpListener::bind(&listen).await?;
-    println!("Fermentrack Rust listening on http://{listen}");
+    println!("YeastCraft listening on http://{listen}");
     axum::serve(
         listener,
         router(a, PathBuf::from(opt("--static", "ui/dist"))),
@@ -808,7 +808,7 @@ mod proxy_auth_tests {
                 .uri(path)
                 .header("X-Authentik-Username", "example-user");
             if let Some(value) = value {
-                req = req.header("X-Fermentrack-Proxy-Proof", value);
+                req = req.header("X-YeastCraft-Proxy-Proof", value);
             }
             let res = app
                 .clone()
@@ -822,7 +822,7 @@ mod proxy_auth_tests {
             .oneshot(
                 axum::http::Request::builder()
                     .uri("/api/v1/auth/status")
-                    .header("X-Fermentrack-Proxy-Proof", &proof)
+                    .header("X-YeastCraft-Proxy-Proof", &proof)
                     .body(axum::body::Body::empty())
                     .unwrap(),
             )
@@ -837,7 +837,7 @@ mod proxy_auth_tests {
             "/api/v1/auth/login",
             "/api/v1/auth/password",
         ] {
-            let res=app.clone().oneshot(axum::http::Request::builder().method("POST").uri(path).header("Content-Type","application/json").header("X-Fermentrack-Proxy-Proof",&proof).body(axum::body::Body::from(json!({"username":"should-not-exist","password":"valid-test-password","old_password":"old","new_password":"new-test-password"}).to_string())).unwrap()).await.unwrap();
+            let res=app.clone().oneshot(axum::http::Request::builder().method("POST").uri(path).header("Content-Type","application/json").header("X-YeastCraft-Proxy-Proof",&proof).body(axum::body::Body::from(json!({"username":"should-not-exist","password":"valid-test-password","old_password":"old","new_password":"new-test-password"}).to_string())).unwrap()).await.unwrap();
             assert_eq!(res.status(), StatusCode::CONFLICT);
         }
         assert_eq!(

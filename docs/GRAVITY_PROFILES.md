@@ -2,7 +2,7 @@
 
 Sometimes the yeast does not follow the calendar. Gravity conditions let a profile
 wait for measurements before changing temperature. The controller still regulates
-temperature; Fermentrack RS changes its target when the current step finishes.
+temperature; YeastCraft changes its target when the current step finishes.
 
 ## Create a profile
 
@@ -38,7 +38,7 @@ completion date when gravity conditions make the duration unknown.
   Stability also requires coverage of the full selected duration. The newest value
   must be at most 30 minutes old; a gap over 30 minutes resets confirmation.
 - Automatic control uses the SG calculation selected for that sensor (device SG
-  or Fermentrack RS calibration). Invalid/missing SG and changes in calibration ID or
+  or YeastCraft calibration). Invalid/missing SG and changes in calibration ID or
   SG source break the confirming series. Old values from a previous calculation
   do not trigger a transition before new values from the active calculation arrive.
 - Only readings **after the current step started** are eligible. Preexisting
@@ -52,7 +52,7 @@ completion date when gravity conditions make the duration unknown.
 For now, automatic SG conditions require the iSpindel freshness and confirmation
 windows above. A sensor waking only once an hour can still log readings, but will
 not satisfy those automatic conditions. Battery-friendly intervals and Brewfather
-manual-reading import are part of the [planned integration work](https://github.com/jonohr/fermentrack-rs/issues/1).
+manual-reading import are part of the [planned integration work](https://github.com/jonohr/YeastCraft/issues/1).
 
 ## Persistence and visibility
 

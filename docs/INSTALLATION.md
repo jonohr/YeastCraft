@@ -1,6 +1,6 @@
 # From first start to first fermentation
 
-This guide gets RS talking to your equipment, then covers the everyday jobs:
+This guide gets YeastCraft talking to your equipment, then covers the everyday jobs:
 backups, updates and figuring out what the controller just said.
 
 ## First start
@@ -30,7 +30,7 @@ not been verified across boards. Do not use privileged mode as a shortcut.
 The connection workflow waits for a fresh reading. Choose **Change target** or
 start a profile to control temperature. Check the returned target and controller
 state. A manual target cancels the assigned profile. Hardware still regulates its
-own heating/cooling cycle; RS sends targets and logs measurements.
+own heating/cooling cycle; YeastCraft sends targets and logs measurements.
 
 For an iSpindel, create its sensor and receiving token, and point
 the device at `/iSpindel` on the reachable app URL. Choose device SG/Plato explicitly
@@ -40,13 +40,13 @@ whole application. The sensor token authenticates ingest requests.
 
 For exports, configure and explicitly enable a destination in the app. Nothing is
 sent before a destination is configured and enabled. For Brewfather, the sender
-is **Fermentrack RS** and the device name is the selected controller or sensor name.
+is **YeastCraft** and the device name is the selected controller or sensor name.
 Keep that name stable between batches; associate the device with your batch in
 Brewfather. Synthetic test readings belong in a separate, deliberately chosen test
 device, not your fermentation history. [Brewfather test evidence](VALIDATION.md#brewfather-delivery).
 
 Brewfather batch/profile import and gravity synchronization are
-[planned](https://github.com/jonohr/fermentrack-rs/issues/1), not currently available.
+[planned](https://github.com/jonohr/YeastCraft/issues/1), not currently available.
 
 ## Network access and authentication
 
@@ -58,7 +58,7 @@ HTTP port directly from the internet. Complete first-account setup promptly.
 For a local proxy or SSH-only access, create a `.env` file beside Compose containing:
 
 ```dotenv
-FERMENTRACK_BIND_ADDRESS=127.0.0.1
+YEASTCRAFT_BIND_ADDRESS=127.0.0.1
 ```
 
 Recreate the container after changing the bind address. You can also set it to a
@@ -75,7 +75,7 @@ cross-origin writes are refused. Do not enable secure cookies for plain HTTP.
 Local login can stay enabled behind a proxy. Optional proxy-only authentication
 uses `--disable-internal-auth --proxy-proof-file /run/secrets/proxy-proof`.
 The proof file must contain 64 hexadecimal characters. The proxy must authenticate
-the user, overwrite `X-Fermentrack-Proxy-Proof` with that secret and prevent direct
+the user, overwrite `X-YeastCraft-Proxy-Proof` with that secret and prevent direct
 untrusted access to the upstream. Merely sending identity headers is insufficient.
 Store proof files outside source control. The optional external logout path currently
 uses Authentik's `/outpost.goauthentik.io/sign_out`; other providers need adaptation.
@@ -91,7 +91,7 @@ create a temporary override such as `compose.maintenance.yml`:
 
 ```yaml
 services:
-  fermentrack-rs:
+  yeastcraft:
     command: ["--listen", "0.0.0.0:8315", "--maintenance"]
 ```
 
@@ -107,7 +107,7 @@ For legacy import, keep a consistent SQLite database copy and stable CSV directo
 under ignored `private-import/`. Import never requires a running Django installation:
 
 ```sh
-rust/target/debug/fermentrack-rs import --db state/fermentrack.sqlite \
+rust/target/debug/yeastcraft import --db state/yeastcraft.sqlite \
   --source private-import/source.sqlite --data private-import/data
 # Review the report; append --apply only when ready.
 ```

@@ -7,7 +7,7 @@ no Docker service, production dependency or physical device connection.
 python3 tools/brewpi-emulator/emulator.py --port 18323 --speed 60
 ```
 
-In an isolated Fermentrack RS instance, add a Wi-Fi/TCP temperature controller at
+In an isolated YeastCraft instance, add a Wi-Fi/TCP temperature controller at
 `127.0.0.1:18323`, Celsius. Do not use this loopback address for a server running
 inside Docker: it refers to the container itself. Stop with Ctrl+C. The process
 starts in Off mode and loses its synthetic state on exit.

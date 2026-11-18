@@ -115,12 +115,12 @@ test("manual iSpindel references, source units, fitted preview, apply and restor
     .click();
   await page
     .getByRole("button", {
-      name: "Use this calibration in Fermentrack RS",
+      name: "Use this calibration in YeastCraft",
       exact: true,
     })
     .click();
   await expect(
-    page.getByText("Calibration is active in Fermentrack RS.", { exact: false }),
+    page.getByText("Calibration is active in YeastCraft.", { exact: false }),
   ).toBeVisible();
   await expect(page.getByLabel("Gravity source")).toHaveValue("server");
   const after = await (

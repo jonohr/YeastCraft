@@ -356,7 +356,7 @@ test("external authentication skips local login and password management", async 
     proof = "e".repeat(64);
   writeFileSync(file, proof, { mode: 0o600 });
   const child = spawn(
-    "../rust/target/debug/fermentrack-rs",
+    "../rust/target/debug/yeastcraft",
     [
       "--db",
       db,
@@ -383,7 +383,7 @@ test("external authentication skips local login and password management", async 
     await page.goto("http://127.0.0.1:8317/");
     await expect(page.getByRole("alert")).toContainText("protected proxy");
     await expect(page.getByLabel("Password", { exact: true })).toHaveCount(0);
-    await page.setExtraHTTPHeaders({ "X-Fermentrack-Proxy-Proof": proof });
+    await page.setExtraHTTPHeaders({ "X-YeastCraft-Proxy-Proof": proof });
     await page.goto("http://127.0.0.1:8317/");
     await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
     await page.goto("http://127.0.0.1:8317/settings");

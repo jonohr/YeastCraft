@@ -6,7 +6,7 @@ Start with your fridge. Dig into the internals when you need them.
 
 | Guide                                                       | What it helps with                                                    |
 | ----------------------------------------------------------- | --------------------------------------------------------------------- |
-| [Quick start](../README.md#quick-start-with-docker-compose) | Build RS, open the app and create your account                        |
+| [Quick start](../README.md#quick-start-with-docker-compose) | Build YeastCraft, open the app and create your account                        |
 | [Installation and operations](INSTALLATION.md)              | Connect equipment, set temperatures, export readings and keep backups |
 | [Compatibility](COMPATIBILITY.md)                           | Check tested hardware and the limits of this preview                  |
 | [Gravity-controlled profiles](GRAVITY_PROFILES.md)          | Let measurements decide when a temperature step finishes              |
@@ -35,8 +35,8 @@ checks and code changes. No spare fridge? The [iSpindel](../tools/ispindel-emula
 [BrewPi chamber](../tools/brewpi-emulator/README.md) and
 [Tilt](../tools/tilt-emulator/README.md) emulators let you work with synthetic data.
 
-Planned work lives in [GitHub Issues](https://github.com/jonohr/fermentrack-rs/issues).
-The [Brewfather integration proposal](https://github.com/jonohr/fermentrack-rs/issues/1)
+Planned work lives in [GitHub Issues](https://github.com/jonohr/YeastCraft/issues).
+The [Brewfather integration proposal](https://github.com/jonohr/YeastCraft/issues/1)
 is a plan, not a list of features you can use today.
 
 The validation and audit documents describe test coverage and its limits, not a

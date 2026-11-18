@@ -14,16 +14,16 @@ a = parser.parse_args()
 folder = a.directory.resolve()
 root = Path(__file__).resolve().parents[1]
 commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip()
-with tarfile.open(folder / 'fermentrack-rs-source.tar.gz') as source:
-    manifest = json.load(source.extractfile('fermentrack-rs-source/RELEASE-SOURCE.json'))
+with tarfile.open(folder / 'yeastcraft-source.tar.gz') as source:
+    manifest = json.load(source.extractfile('yeastcraft-source/RELEASE-SOURCE.json'))
 assert manifest['commit'] == commit, 'Source bundle is for another commit'
 images = []
 for arch in ['amd64', 'arm64', 'armv7']:
     receipt = json.loads((folder / f'image-{arch}.json').read_text())
     assert receipt['commit'] == commit and receipt['arch'] == arch, 'Image provenance mismatch'
     assert receipt['runtime_packages'] == manifest['runtime_packages'], 'Runtime versions differ from packaged sources'
-    assert receipt['archive'] == f'fermentrack-rs-linux-{arch}.docker.tar.gz'
-    assert receipt['tag'] == f'fermentrack-rs:{commit[:12]}-{arch}'
+    assert receipt['archive'] == f'yeastcraft-linux-{arch}.docker.tar.gz'
+    assert receipt['tag'] == f'yeastcraft:{commit[:12]}-{arch}'
     with tarfile.open(folder / receipt['archive']) as archive:
         entries = json.load(archive.extractfile('manifest.json'))
         assert len(entries) == 1 and entries[0]['RepoTags'] == [receipt['tag']], 'Unexpected Docker tags'
@@ -35,9 +35,9 @@ for arch in ['amd64', 'arm64', 'armv7']:
 (folder / 'release-manifest.json').write_text(json.dumps({'commit': commit, 'images': images}, indent=2) + '\n')
 compose = (root / 'compose.rust.yml').read_text()
 compose = compose.replace('    build:\n      context: .\n      dockerfile: Dockerfile.rust\n', '')
-compose = compose.replace('image: fermentrack-rs:local', f'image: fermentrack-rs:{commit[:12]}-${{RS_ARCH:-amd64}}\n    pull_policy: never')
+compose = compose.replace('image: yeastcraft:local', f'image: yeastcraft:{commit[:12]}-${{YEASTCRAFT_ARCH:-amd64}}\n    pull_policy: never')
 (folder / 'compose.yml').write_text(compose)
-(folder / 'INSTALL.txt').write_text(f'''Fermentrack RS — release candidate
+(folder / 'INSTALL.txt').write_text(f'''YeastCraft — release candidate
 Source commit: {commit}
 
 These Docker archives contain the complete standalone app. No Node installation
@@ -46,22 +46,22 @@ or compilation is required. Choose amd64, arm64 or armv7 for your Linux host.
 1. Download the complete asset set into a new directory.
 2. Verify: sha256sum -c SHA256SUMS
 3. Load your architecture, for example:
-   docker load -i fermentrack-rs-linux-amd64.docker.tar.gz
+   docker load -i yeastcraft-linux-amd64.docker.tar.gz
 4. mkdir -p private-import
-5. RS_ARCH=amd64 docker compose up -d
+5. YEASTCRAFT_ARCH=amd64 docker compose up -d
 6. Open http://SERVER-IP:8315 on a trusted network and create your account.
 
-Use RS_ARCH=arm64 or RS_ARCH=armv7 for those platforms in step 5, and load the
+Use YEASTCRAFT_ARCH=arm64 or YEASTCRAFT_ARCH=armv7 for those platforms in step 5, and load the
 matching archive in step 3. Keep the same Compose project/directory for upgrades.
 Back up your data first; do not use docker compose down -v unless deleting it.
 
-Optional: set FERMENTRACK_BIND_ADDRESS=127.0.0.1 in .env for loopback-only access.
+Optional: set YEASTCRAFT_BIND_ADDRESS=127.0.0.1 in .env for loopback-only access.
 Never run two applications against the same controller.
 See the installation and compatibility guides in the matching source bundle.
 The source archive includes project and dependency sources and license notices;
 keep it available alongside the images when redistributing them.
 ''')
-(folder / 'RELEASE-NOTES.md').write_text(f'''# Fermentrack RS preview
+(folder / 'RELEASE-NOTES.md').write_text(f'''# YeastCraft preview
 
 A small fermentation controller with a Rust server and a mobile/desktop interface.
 This is an early preview, built on the work of Fermentrack and the BrewPi community.

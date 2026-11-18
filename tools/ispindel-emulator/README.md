@@ -1,6 +1,6 @@
 # iSpindel emulator
 
-Standalone Rust CLI, independent of the Fermentrack RS server. Sends HTTP JSON using
+Standalone Rust CLI, independent of the YeastCraft server. Sends HTTP JSON using
 the iSpindel field names accepted by the Rust receiver. No daemon, Docker or Node
 required. Without `--url`, it prints redacted sample packets and sends nothing.
 The default is one sample; `--count 0` runs until Ctrl+C.
@@ -42,7 +42,7 @@ the last point they remain constant. A one-point scenario gives fixed readings.
 The bundled curve is synthetic test data, not a physical model or real calibration.
 Angle and device SG can deliberately disagree to test source/calibration selection.
 Battery 4.1 V, RSSI -55 and device ID 900001 are fixed synthetic fields. Sensor tokens
-select the destination sensor in Fermentrack RS; name/ID do not create one.
+select the destination sensor in YeastCraft; name/ID do not create one.
 
 Requests time out after 10 seconds; any HTTP/network error exits nonzero without
 retries. No controller commands, profile assignments, or export calls are made by
@@ -56,7 +56,7 @@ cargo build --locked
 python3 verify.py
 ```
 
-`verify.py` uses a temporary database and an isolated loopback Fermentrack RS process
+`verify.py` uses a temporary database and an isolated loopback YeastCraft process
 with collection enabled and no physical controller or external export destination configured. It checks ingest, angle/SG/source,
 history, unknown-token rejection, preview redaction and redirect/error handling.
 It never reads production state or credentials. Build the parent Rust server first
@@ -103,7 +103,7 @@ is rejected in this mode. With neither model nor calibration supplied, independe
 modeled readings to the test sensor. Restart with the new calibration file to apply
 it. Calibration files are not reloaded while running.
 
-The Fermentrack RS calibration view can also use these angles and manual known SG
+The YeastCraft calibration view can also use these angles and manual known SG
 values as references. Its coefficient fields map as follows: constant_term=d,
 first_degree_coefficient=c, second_degree_coefficient=b, third_degree_coefficient=a.
 Copy those coefficients into the emulator calibration file to test the same formula
