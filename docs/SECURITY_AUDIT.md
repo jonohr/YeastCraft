@@ -1,6 +1,6 @@
 # Security review
 
-Reviewed 2026-11-17. Scope: the RS source, locked dependencies and minimal runtime
+Reviewed 2026-11-17. Scope: the YeastCraft source, locked dependencies and minimal runtime
 images for amd64, ARM64 and ARMv7. This is an implementation review plus automated
 checks, not an independent penetration test. Deployment guidance and reporting
 status are in [SECURITY.md](../SECURITY.md).
@@ -66,7 +66,7 @@ network flooding and complete hardware certification remain outside this review.
 After building an image:
 
 ```sh
-scripts/security-audit.sh /tmp/fermentrack-audit fermentrack-rs:local
+scripts/security-audit.sh /tmp/fermentrack-audit yeastcraft:local
 python3 scripts/check-security-report.py /tmp/fermentrack-audit/source.json /tmp/fermentrack-audit/runtime.json
 npm --prefix ui audit
 ```

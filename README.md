@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="design/brand/wordmark-forest.svg" alt="Fermentrack RS" width="560">
+  <img src="design/brand/wordmark-forest.svg" alt="YeastCraft" width="560">
 </p>
 
 <p align="center">
@@ -9,18 +9,20 @@
   <a href="https://github.com/jonohr/fermentrack-rs/issues">Ideas &amp; issues</a>
 </p>
 
-# Fermentrack RS
+# YeastCraft
 
-An independent Rust rewrite of Fermentrack, with a redesigned interface,
-additional features, and a focus on low resource usage.
+An independent fermentation control and monitoring app for BrewPi-compatible
+controllers, written in Rust with a modern interface and low resource usage.
 
 Built on the work of [Fermentrack](https://github.com/thorrak/fermentrack) by
 **John Beeler, Fredrik Steen and contributors**, and the
 [BrewPi community](https://github.com/BrewPi). Their ideas, controller integration
-and legacy data formats provided the foundation for RS. This is an independent
+and legacy data formats provided the foundation for YeastCraft. BrewPi firmware
+handles temperature regulation and heating/cooling cycles on the controller;
+YeastCraft sends setpoints, runs profiles and records measurements. This is an independent
 project, not an official Fermentrack release. See [full attribution](NOTICE.md).
 
-RS gives your fermentation chamber a plan: hold a temperature, follow a schedule,
+YeastCraft gives your fermentation chamber a plan: hold a temperature, follow a schedule,
 or move to the next step when gravity measurements meet your conditions. Check
 progress from your phone or desktop, and let the controller handle the heating
 and cooling cycles.
@@ -34,8 +36,6 @@ to run it. Your fridge already has enough humming away.
 > Other combinations need help from people who own them. Tilt HTTP is experimental;
 > direct Bluetooth and firmware flashing are not implemented.
 > [What we have tested, and what we have not →](docs/COMPATIBILITY.md)
-
-**Why RS?** Rust, with a nod to _Rennsport_ — a lighter, leaner take on fermentation control.
 
 ## What you can do
 
@@ -52,7 +52,7 @@ to run it. Your fridge already has enough humming away.
 
 This started partly with a simple wish: the fermentation server should leave some
 RAM for everything else. Our original Fermentrack installation used about
-**490 MiB** in Docker snapshots. In isolated tests of the RS standalone runtime,
+**490 MiB** in Docker snapshots. In isolated tests of the YeastCraft standalone runtime,
 process memory settled around **10 MiB RSS** (about **4 MiB** by Docker accounting),
 with temporary peaks around **48 MiB RSS** during concurrent password checks.
 
@@ -70,8 +70,8 @@ minimal runtime contains no shell or Node. See [container builds](docs/CONTAINER
 Clone the repository, then build and start it:
 
 ```sh
-git clone https://github.com/jonohr/fermentrack-rs.git
-cd fermentrack-rs
+git clone https://github.com/jonohr/fermentrack-rs.git yeastcraft
+cd yeastcraft
 mkdir -p private-import
 docker compose -f compose.rust.yml up -d --build
 ```
@@ -80,6 +80,8 @@ Open **http://SERVER-IP:8315** from your local network (or
 **http://localhost:8315** on the server itself) and create the first administrator account. There is
 no default username or password. The password must contain at least 12 characters.
 The database is stored in the Compose-managed `rust_state` volume.
+Already running RS? Follow the [upgrade steps](docs/INSTALLATION.md#upgrading-an-existing-rs-installation-to-yeastcraft)
+to keep your existing volume and controller connection.
 
 Collection, temperature control and exports are ready to use. Add your controller
 or sensor in the app; exports start only when you configure and enable a destination.
@@ -92,7 +94,7 @@ account on a trusted network. Do not forward port 8315 directly from the interne
 use HTTPS with authentication for remote access.
 
 If you prefer access only through a local proxy or SSH tunnel, put
-`FERMENTRACK_BIND_ADDRESS=127.0.0.1` in a local `.env` file beside Compose.
+`YEASTCRAFT_BIND_ADDRESS=127.0.0.1` in a local `.env` file beside Compose.
 See [network and authentication options](docs/INSTALLATION.md#network-access-and-authentication).
 The default installation works on its own; no external login service is required.
 
@@ -106,7 +108,7 @@ cargo build --locked --manifest-path rust/Cargo.toml
 npm --prefix ui ci
 npm --prefix ui run build
 mkdir -p state private-import
-rust/target/debug/fermentrack-rs --db state/fermentrack.sqlite --static ui/dist
+rust/target/debug/yeastcraft --db state/fermentrack.sqlite --static ui/dist
 ```
 
 Tests:
@@ -142,8 +144,8 @@ review and licensing details.
 ## What is brewing next?
 
 Brewfather export already delivers readings. Next, we would like to bring a batch's
-fermentation plan and manual gravity readings back into RS, so you can plan in
-Brewfather and let RS run the chamber. That is **planned, not implemented**:
+fermentation plan and manual gravity readings back into YeastCraft, so you can plan in
+Brewfather and let YeastCraft run the chamber. That is **planned, not implemented**:
 [follow the integration proposal](https://github.com/jonohr/fermentrack-rs/issues/1).
 
 Found a rough edge? Have equipment we have not tried? [Open an issue](https://github.com/jonohr/fermentrack-rs/issues).
@@ -151,6 +153,6 @@ A clear description or a careful hardware test is just as welcome as code.
 
 ## License and attribution
 
-RS code is **GPL-3.0-only**, unless a file states otherwise. See [LICENSE](LICENSE)
+YeastCraft code is **GPL-3.0-only**, unless a file states otherwise. See [LICENSE](LICENSE)
 and [NOTICE.md](NOTICE.md) for Fermentrack, BrewPi and Lucide attribution. This is
 an independent project, not an official Fermentrack release.

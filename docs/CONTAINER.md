@@ -12,7 +12,7 @@ files and temporary SQLite/backup files live in the writable state volume.
 Normal startup enables collection/control/export workers; equipment and destinations
 are configured in the app. Use `--maintenance` explicitly for restore or offline
 inspection. Compose publishes port 8315 on all IPv4 host interfaces by default;
-`FERMENTRACK_BIND_ADDRESS=127.0.0.1` selects loopback.
+`YEASTCRAFT_BIND_ADDRESS=127.0.0.1` selects loopback.
 The runtime uses a glibc allocator setting to release large temporary buffers. This is a smaller disk image, not a
 claim that RAM usage falls by the same percentage.
 
@@ -47,8 +47,8 @@ The tested Docker-container BuildKit includes QEMU helpers. The Rust compiler an
 frontend build run on BUILDPLATFORM; explicit Rust targets and cross C toolchains
 compile the backend and bundled SQLite. No host-wide binfmt change was used.
 
-Bake produces `fermentrack-rs:local` (amd64), `fermentrack-rs:arm64` and
-`fermentrack-rs:armv7`. It does not push images. For one target, append its Bake name:
+Bake produces `yeastcraft:local` (amd64), `yeastcraft:arm64` and
+`yeastcraft:armv7`. It does not push images. For one target, append its Bake name:
 
 ```sh
 docker buildx bake --builder rs-builder arm64 --load
@@ -60,8 +60,8 @@ Build the main debug binary, UI and iSpindel CLI as described in CONTRIBUTING.md
 before the image acceptance wrapper. On a native Linux Docker host:
 
 ```sh
-python3 scripts/verify-container.py --image fermentrack-rs:local
-python3 scripts/verify-image.py --image fermentrack-rs:local
+python3 scripts/verify-container.py --image yeastcraft:local
+python3 scripts/verify-image.py --image yeastcraft:local
 ```
 
 The first uses a disposable Compose project and named volume. The second runs the
@@ -72,10 +72,10 @@ Both clean up their containers; neither connects to physical brewing hardware.
 On x86 without host binfmt registration, provide a trusted static QEMU helper:
 
 ```sh
-python3 scripts/verify-container.py --image fermentrack-rs:arm64 --platform linux/arm64 --qemu /path/to/qemu-aarch64
-python3 scripts/verify-image.py --image fermentrack-rs:arm64 --platform linux/arm64 --qemu /path/to/qemu-aarch64
-python3 scripts/verify-container.py --image fermentrack-rs:armv7 --platform linux/arm/v7 --qemu /path/to/qemu-arm
-python3 scripts/verify-image.py --image fermentrack-rs:armv7 --platform linux/arm/v7 --qemu /path/to/qemu-arm
+python3 scripts/verify-container.py --image yeastcraft:arm64 --platform linux/arm64 --qemu /path/to/qemu-aarch64
+python3 scripts/verify-image.py --image yeastcraft:arm64 --platform linux/arm64 --qemu /path/to/qemu-aarch64
+python3 scripts/verify-container.py --image yeastcraft:armv7 --platform linux/arm/v7 --qemu /path/to/qemu-arm
+python3 scripts/verify-image.py --image yeastcraft:armv7 --platform linux/arm/v7 --qemu /path/to/qemu-arm
 ```
 
 These scripts mount QEMU only for tests and override entrypoint/healthcheck where

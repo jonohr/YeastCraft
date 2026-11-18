@@ -1,6 +1,6 @@
 # License and repository-content review — 2026-11-17
 
-Scope: the clean RS repository, locked dependencies, shipped artwork and the three
+Scope: the clean YeastCraft repository, locked dependencies, shipped artwork and the three
 minimal runtime images. This is a technical distribution review, not a legal opinion
 about trademarks or every possible downstream use.
 
@@ -19,13 +19,13 @@ after Cargo fetch/npm ci. Platform-specific esbuild/Rollup binaries inherit thei
 matching-version parent package's notice. These are build tools, not shipped runtime.
 
 The Docker image includes the notices as
-`/usr/share/doc/fermentrack-rs/licenses.tar.gz`, alongside the project's uncompressed
+`/usr/share/doc/yeastcraft/licenses.tar.gz`, alongside the project's uncompressed
 LICENSE and NOTICE.md. Copied glibc/GCC/CA material retains Debian copyright notices
 and exact package provenance. Compression keeps the minimal image small.
 
 ## Specific checks
 
-- Fermentrack's MIT notice and BrewPi GPLv3 text remain intact. RS is described as
+- Fermentrack's MIT notice and BrewPi GPLv3 text remain intact. YeastCraft is described as
   independent; no original Python application, firmware binaries or private Git
   history are included. This is not a claim to upstream ownership or endorsement.
 - Lucide/Feather-derived icons and the flask identity retain their ISC attribution.
@@ -71,7 +71,7 @@ images and rejects mismatched runtime-library versions before assembling a relea
 
 ## Repository contents
 
-The repository has its own RS history, without private deployment history,
+The repository has its own YeastCraft history, without private deployment history,
 measurements or credentials. Tracked artwork, synthetic protocol fixtures,
 source/build instructions and attribution are included. Generated databases,
 build products and private state are ignored.

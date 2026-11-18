@@ -46,12 +46,12 @@ the GitHub account plan. No branch-protection rule is installed by these workflo
 
 ## What a candidate contains
 
-Download `fermentrack-rs-release-candidate` from the Actions run. It contains:
+Download `yeastcraft-release-candidate` from the Actions run. It contains:
 
 | File                                      | Purpose                                                                               |
 | ----------------------------------------- | ------------------------------------------------------------------------------------- |
-| `fermentrack-rs-linux-ARCH.docker.tar.gz` | Tested standalone Docker image for amd64, arm64 or armv7                              |
-| `fermentrack-rs-source.tar.gz`            | Exact committed source, locked dependencies and corresponding runtime-library sources |
+| `yeastcraft-linux-ARCH.docker.tar.gz` | Tested standalone Docker image for amd64, arm64 or armv7                              |
+| `yeastcraft-source.tar.gz`            | Exact committed source, locked dependencies and corresponding runtime-library sources |
 | `image-ARCH.json`                         | Per-image commit, ID, architecture, tag and runtime packages                          |
 | `release-manifest.json`                   | Combined image provenance                                                             |
 | `compose.yml` and `INSTALL.txt`           | Install a loaded image without compiling or pulling from a registry                   |
@@ -75,7 +75,7 @@ After the intended commit is merged and green, create and push a version tag:
 ```sh
 git switch main
 git pull --ff-only
-git tag -a v0.1.0-preview.1 -m 'Fermentrack RS preview 1'
+git tag -a v0.1.0-preview.1 -m 'YeastCraft preview 1'
 git push origin v0.1.0-preview.1
 ```
 
@@ -98,7 +98,7 @@ checks their image IDs. It pushes those images to GHCR **without rebuilding** an
 creates the multi-platform tag:
 
 ```text
-ghcr.io/jonohr/fermentrack-rs:v0.1.0-preview.1
+ghcr.io/jonohr/yeastcraft:v0.1.0-preview.1
 ```
 
 This is the naming scheme, not a claim that this tag already exists. The workflow

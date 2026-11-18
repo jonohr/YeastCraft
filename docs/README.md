@@ -6,7 +6,7 @@ Start with your fridge. Dig into the internals when you need them.
 
 | Guide                                                       | What it helps with                                                    |
 | ----------------------------------------------------------- | --------------------------------------------------------------------- |
-| [Quick start](../README.md#quick-start-with-docker-compose) | Build RS, open the app and create your account                        |
+| [Quick start](../README.md#quick-start-with-docker-compose) | Build YeastCraft, open the app and create your account                        |
 | [Installation and operations](INSTALLATION.md)              | Connect equipment, set temperatures, export readings and keep backups |
 | [Compatibility](COMPATIBILITY.md)                           | Check tested hardware and the limits of this preview                  |
 | [Gravity-controlled profiles](GRAVITY_PROFILES.md)          | Let measurements decide when a temperature step finishes              |

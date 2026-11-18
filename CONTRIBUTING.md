@@ -1,12 +1,12 @@
 # Contributing
 
 You do not need a Rust compiler to help. A confusing screen, a reproducible bug or
-results from a controller we have not tried can all make RS better. This is a small,
+results from a controller we have not tried can all make YeastCraft better. This is a small,
 early project; thank you for taking a look.
 
 ## Start with an issue
 
-- **Something broke?** Tell us what you expected, what happened, your RS revision,
+- **Something broke?** Tell us what you expected, what happened, your YeastCraft revision,
   installation method and steps to reproduce it. For hardware, include the board,
   firmware and connection type.
 - **Have an idea?** Describe the brewing problem you want to solve. A concrete
@@ -59,7 +59,7 @@ hardware evidence before being described as supported.
 For a completely fresh container installation (requires Docker Compose):
 
 ```sh
-docker build -f Dockerfile.rust -t fermentrack-rs:local .
+docker build -f Dockerfile.rust -t yeastcraft:local .
 python3 scripts/verify-container.py
 ```
 
@@ -71,3 +71,12 @@ are removed afterward. It never uses an existing installation or proxy credentia
 For all acceptance suites against a built image, run `python3 scripts/verify-image.py`.
 See [CONTAINER.md](docs/CONTAINER.md) for ARM builds and optional QEMU testing, and
 [SECURITY.md](SECURITY.md) for reproducible scans and private reporting guidance.
+
+For an upgrade check against a previous local server build, run
+`python3 scripts/verify-upgrade.py /path/to/previous-server-binary`. This creates
+a disposable database, account, profile and disabled sensor, then reopens them
+with YeastCraft. It never reads an existing installation's database.
+
+On space-constrained development machines, use `CARGO_INCREMENTAL=0` and
+`CARGO_PROFILE_DEV_DEBUG=0` for local acceptance builds. Generated Rust `target/`
+directories can be rebuilt; runtime databases and backups must be preserved.
