@@ -38,7 +38,7 @@ test("batch review retries a failed command using the same draft", async ({
     kind: "devices",
     name: "Test chamber",
     data: {
-      unit: "C",
+      unit: "F",
       collection_enabled: true,
       control_claimed: true,
       last_seen: Date.now(),
@@ -54,6 +54,7 @@ test("batch review retries a failed command using the same draft", async ({
       body = { control_enabled: true, collection_enabled: true };
     else if (path.endsWith("/devices/test/command")) {
       commands++;
+      expect(r.request().postDataJSON().temperature).toBe(64.4);
       if (commands === 1)
         return r.fulfill({
           status: 503,
@@ -75,13 +76,12 @@ test("batch review retries a failed command using the same draft", async ({
   });
   await page.goto("/batches");
   await page.getByRole("button", { name: "Add", exact: true }).click();
-  await page.getByLabel("Name", { exact: true }).fill("Test fermentation");
+  await page.getByLabel("Temperature plan").selectOption("b");
   await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByLabel("Name", { exact: true }).fill("Test fermentation");
   await page
     .getByLabel("Temperature controller", { exact: true })
     .selectOption("test");
-  await page.getByLabel("Temperature plan").selectOption("b");
-  await page.getByRole("button", { name: "Continue", exact: true }).click();
 
   await page.getByRole("button", { name: "Start batch", exact: true }).click();
   await expect(page.getByRole("alert")).toHaveText("Controller unavailable");

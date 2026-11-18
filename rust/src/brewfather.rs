@@ -256,7 +256,7 @@ fn select_batch(b: &Value) -> Value {
         "name":label(s.get("name").filter(|v|v.as_str().is_some_and(|s|!s.is_empty())).unwrap_or(&s["type"])),
         "temperature":number(&s["stepTemp"]),"days":number(&s["stepTime"]),"ramp":number(&s["ramp"]),"pressure":number(&s["pressure"])
     })).collect();
-    json!({"id":label(&b["_id"]),"name":label(&b["name"]),"number":number(&b["batchNo"]),"status":label(&b["status"]),"recipe":label(&b["recipe"]["name"]),"og":number(&b["measuredOg"]),"fg":number(&b["measuredFg"]),"profile":{"name":label(&p["name"]),"steps":steps}})
+    json!({"id":label(&b["_id"]),"name":label(&b["name"]),"number":number(&b["batchNo"]),"brew_date":number(&b["brewDate"]),"status":label(&b["status"]),"recipe":label(&b["recipe"]["name"]),"og":number(&b["measuredOg"]),"fg":number(&b["measuredFg"]),"profile":{"name":label(&p["name"]),"steps":steps}})
 }
 fn select_readings(rows: &Value) -> Result<Value, ApiError> {
     let rows = rows
@@ -292,9 +292,12 @@ pub async fn batches(
         return Err(ApiError::bad("Invalid page cursor"));
     }
     let path = if page.after.is_empty() {
-        "batches?limit=50".into()
+        "batches?limit=50&order_by=brewDate&order_by_direction=desc&include=measuredOg".into()
     } else {
-        format!("batches?limit=50&start_after={}", page.after)
+        format!(
+            "batches?limit=50&order_by=brewDate&order_by_direction=desc&include=measuredOg&start_after={}",
+            page.after
+        )
     };
     let mut client = CLIENT.get_or_init(Default::default).lock().await;
     let credentials = credentials(&a)?;
@@ -339,6 +342,36 @@ pub async fn batch(State(a): State<App>, Path(id): Path<String>) -> Result<Json<
     Ok(Json(
         json!({"batch":select_batch(&b),"readings":readings,"candidate":candidate,"fetched":stamp.min(read_stamp),"history_complete":false,"read_only":true}),
     ))
+}
+/// Fetch only the start values and profile. No readings or historical import.
+pub async fn plan(State(a): State<App>, Path(id): Path<String>) -> Result<Json<Value>, ApiError> {
+    if !valid_id(&id) {
+        return Err(ApiError::bad("Invalid batch ID"));
+    }
+    let mut client = CLIENT.get_or_init(Default::default).lock().await;
+    let credentials = credentials(&a)?;
+    Ok(Json(load_plan(&mut client, &credentials, &id).await?))
+}
+async fn load_plan(
+    client: &mut Client,
+    credentials: &Credentials,
+    id: &str,
+) -> Result<Value, ApiError> {
+    let (stamp, b) = client
+        .get(
+            &format!("batches/{id}?include=recipe.name,recipe.fermentation,measuredOg,measuredFg"),
+            60,
+            credentials,
+        )
+        .await?;
+    if b["_id"] != id {
+        return Err(unavailable("Unexpected batch response."));
+    }
+    let candidate = match translate(&b["recipe"]["fermentation"]) {
+        Ok(c) => c,
+        Err(reason) => json!({"status":"review_required","reason":reason}),
+    };
+    Ok(json!({"batch":select_batch(&b),"candidate":candidate,"fetched":stamp}))
 }
 fn numeric(v: &Value, field: &str, min: f64, max: f64) -> Result<f64, String> {
     v.as_f64()
@@ -457,6 +490,36 @@ mod tests {
         }
     }
     #[tokio::test]
+    async fn start_plan_only_fetches_profile_and_projects_start_values() {
+        let credentials = Credentials {
+            user_id: "fake".into(),
+            api_key: "fake".into(),
+        };
+        let mut client = Client {
+            identity: Some(Sha256::digest(b"fake:fake").into()),
+            test_base: Some("http://127.0.0.1:1/".into()),
+            ..Client::default()
+        };
+        let body = json!({"_id":"sample", "name":"New beer", "measuredOg":1.05, "brewDate":1234, "private":"must-not-escape", "recipe":{"fermentation":{"steps":[{"stepTemp":18,"stepTime":2}]}}});
+        client.cache.push_back(Cached {
+            path: "batches/sample?include=recipe.name,recipe.fermentation,measuredOg,measuredFg"
+                .into(),
+            at: Instant::now(),
+            stamp: 123.,
+            body: serde_json::to_vec(&body).unwrap(),
+        });
+        // Any extra fetch (including readings) fails: the request budget is full.
+        client.calls = std::iter::repeat_n(Instant::now(), 100).collect();
+        let plan = load_plan(&mut client, &credentials, "sample")
+            .await
+            .unwrap_or_else(|_| panic!("plan must not fetch history"));
+        assert_eq!(plan["batch"]["og"], 1.05);
+        assert_eq!(plan["batch"]["brew_date"], 1234);
+        assert_eq!(plan["candidate"]["profile"]["steps"][0]["hours"], 48.);
+        assert!(plan.get("readings").is_none());
+        assert!(!plan.to_string().contains("must-not-escape"));
+    }
+    #[tokio::test]
     async fn cache_and_budget_do_not_call_upstream() {
         let now = Instant::now();
         let credentials = Credentials {
@@ -465,16 +528,22 @@ mod tests {
         };
         let mut c = Client {
             identity: Some(Sha256::digest(b"fake:fake").into()),
+            test_base: Some("http://127.0.0.1:1/".into()),
             ..Client::default()
         };
         c.cache.push_back(Cached {
-            path: "batches?limit=50".into(),
+            path: "batches?limit=50&order_by=brewDate&order_by_direction=desc&include=measuredOg"
+                .into(),
             at: now,
             stamp: 123.,
             body: b"[]".to_vec(),
         });
         let (stamp, rows) = c
-            .get("batches?limit=50", 300, &credentials)
+            .get(
+                "batches?limit=50&order_by=brewDate&order_by_direction=desc&include=measuredOg",
+                300,
+                &credentials,
+            )
             .await
             .unwrap_or_else(|_| panic!("cached request failed"));
         assert_eq!(stamp, 123.);

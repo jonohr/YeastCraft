@@ -144,6 +144,7 @@ fn router(a: App, static_dir: PathBuf) -> Router {
         )
         .route("/brewfather/batches", get(brewfather::batches))
         .route("/brewfather/batches/{id}", get(brewfather::batch))
+        .route("/brewfather/batches/{id}/plan", get(brewfather::plan))
         .route("/diagnostics", get(diagnostics))
         .route("/backup.sqlite", get(backup::download))
         .route(
@@ -654,6 +655,18 @@ mod tests {
             request(&app, "/api/v1/brewfather/batches", "GET", Value::Null, None)
                 .await
                 .0,
+            StatusCode::UNAUTHORIZED
+        );
+        assert_eq!(
+            request(
+                &app,
+                "/api/v1/brewfather/batches/demo/plan",
+                "GET",
+                Value::Null,
+                None
+            )
+            .await
+            .0,
             StatusCode::UNAUTHORIZED
         );
         for method in ["GET", "PUT", "DELETE"] {

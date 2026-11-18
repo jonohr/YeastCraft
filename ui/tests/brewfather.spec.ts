@@ -16,7 +16,7 @@ test("Brewfather preview in the application: plan, final choice and review witho
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
   await page.goto("/integrations");
-  await page.getByRole("link", { name: "Browse Brewfather batches" }).click();
+  await page.goto("/brewfather/");
   await expect(page.locator("#list-error")).toContainText("not connected");
   const b = {
     id: "synthetic",
