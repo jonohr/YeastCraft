@@ -38,7 +38,7 @@ with tempfile.TemporaryDirectory(prefix='ferm-sg-test-') as temp, Server(speed=3
     proc = None
     def api(path, body=None, method=None):
         req = urllib.request.Request(base + '/api/v1/' + path, data=None if body is None else json.dumps(body).encode(),
-            method=method, headers={'x-fermentrack-proxy-proof': proof, 'Content-Type': 'application/json'})
+            method=method, headers={'x-yeastcraft-proxy-proof': proof, 'Content-Type': 'application/json'})
         with urllib.request.urlopen(req, timeout=5) as r: return json.load(r)
     def start():
         global proc

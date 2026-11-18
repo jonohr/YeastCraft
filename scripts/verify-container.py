@@ -21,7 +21,7 @@ parser.add_argument('--qemu', type=Path, help='Optional static QEMU user emulato
 args = parser.parse_args()
 if args.qemu:
     args.qemu = args.qemu.resolve(strict=True)
-with tempfile.TemporaryDirectory(prefix='fermentrack-compose-') as temp:
+with tempfile.TemporaryDirectory(prefix='yeastcraft-compose-') as temp:
     folder = Path(temp)
     (folder / 'private-import').mkdir()
     with socket.socket() as sock:
@@ -29,7 +29,7 @@ with tempfile.TemporaryDirectory(prefix='fermentrack-compose-') as temp:
         port = sock.getsockname()[1]
     config = (ROOT / 'compose.rust.yml').read_text().replace('context: .', f'context: {ROOT}')
     # Acceptance always stays on loopback, independently of the normal LAN default.
-    config = config.replace('${YEASTCRAFT_BIND_ADDRESS:-${FERMENTRACK_BIND_ADDRESS:-0.0.0.0}}:8315:8315', f'127.0.0.1:{port}:8315')
+    config = config.replace('${YEASTCRAFT_BIND_ADDRESS:-0.0.0.0}:8315:8315', f'127.0.0.1:{port}:8315')
     (folder / 'compose.yml').write_text(config)
     compose = ['docker', 'compose', '-p', 'ferm-fresh-' + secrets.token_hex(4), '-f', str(folder / 'compose.yml')]
     service = {'image': args.image}

@@ -35,7 +35,7 @@ with tempfile.TemporaryDirectory(prefix='ispindel-emulator-') as temp:
     def api(path, body=None):
         request = urllib.request.Request(base + '/api/v1/' + path,
             data=None if body is None else json.dumps(body).encode(),
-            headers={'x-fermentrack-proxy-proof': proof, 'Content-Type': 'application/json'})
+            headers={'x-yeastcraft-proxy-proof': proof, 'Content-Type': 'application/json'})
         with urllib.request.urlopen(request, timeout=5) as response:
             return json.load(response)
     env = {k: v for k, v in os.environ.items() if k != 'ISPINDEL_TOKEN'}

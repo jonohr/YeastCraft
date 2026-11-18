@@ -10,8 +10,7 @@ export default defineConfig({
     baseURL: "http://127.0.0.1:8316",
     headless: true,
     launchOptions: {
-      executablePath:
-        process.env.YEASTCRAFT_CHROMIUM ?? process.env.FERMENTRACK_CHROMIUM,
+      executablePath: process.env.YEASTCRAFT_CHROMIUM,
     },
   },
   projects: [

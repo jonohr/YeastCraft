@@ -9,9 +9,9 @@ services:
     read_only: true
     restart: "no"
     ports:
-      - "${YEASTCRAFT_BIND_ADDRESS:-${FERMENTRACK_BIND_ADDRESS:-0.0.0.0}}:8315:8315"
+      - "${YEASTCRAFT_BIND_ADDRESS:-0.0.0.0}:8315:8315"
     volumes:
-      - rust_state:/app/state
+      - yeastcraft_state:/app/state
       - ./private-import:/app/private-import:ro
     mem_limit: 256m
     pids_limit: 128
@@ -20,4 +20,4 @@ services:
     cap_drop:
       - ALL
 volumes:
-  rust_state:
+  yeastcraft_state:

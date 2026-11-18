@@ -36,7 +36,7 @@ pub fn validate_login(v: &Credentials) -> Result<(), ApiError> {
     Ok(())
 }
 static DUMMY_HASH: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
-    let salt = SaltString::encode_b64(b"fermentrackdummy!").unwrap();
+    let salt = SaltString::encode_b64(b"yeastcraftdummy!").unwrap();
     Argon2::default()
         .hash_password(b"invalid-password", &salt)
         .unwrap()
@@ -70,10 +70,7 @@ fn proxy_valid(a: &App, h: &HeaderMap) -> bool {
     let Some(expected) = &a.proxy_proof else {
         return false;
     };
-    let Some(actual) = h
-        .get("x-yeastcraft-proxy-proof")
-        .or_else(|| h.get("x-fermentrack-proxy-proof"))
-    else {
+    let Some(actual) = h.get("x-yeastcraft-proxy-proof") else {
         return false;
     };
     let want: [u8; 32] = Sha256::digest(expected.as_bytes()).into();

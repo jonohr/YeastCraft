@@ -523,7 +523,7 @@ async fn main() -> anyhow::Result<()> {
             .map(|a| a[1].clone())
             .unwrap_or(default.into())
     };
-    let db = Db::init(PathBuf::from(opt("--db", "state/fermentrack.sqlite")))?;
+    let db = Db::init(PathBuf::from(opt("--db", "state/yeastcraft.sqlite")))?;
     if args.first().is_some_and(|a| a == "import") {
         let src = PathBuf::from(opt("--source", ""));
         let data = PathBuf::from(opt("--data", ""));
@@ -808,7 +808,7 @@ mod proxy_auth_tests {
                 .uri(path)
                 .header("X-Authentik-Username", "example-user");
             if let Some(value) = value {
-                req = req.header("X-Fermentrack-Proxy-Proof", value);
+                req = req.header("X-YeastCraft-Proxy-Proof", value);
             }
             let res = app
                 .clone()
@@ -817,34 +817,12 @@ mod proxy_auth_tests {
                 .unwrap();
             assert_eq!(res.status(), expected);
         }
-        // Both deployment generations work; an invalid new header must not
-        // fall back to a valid old header when both are present.
-        for (new, old, expected) in [
-            (Some(proof.as_str()), None, StatusCode::OK),
-            (Some("forged"), None, StatusCode::FORBIDDEN),
-            (Some("forged"), Some(proof.as_str()), StatusCode::FORBIDDEN),
-            (Some(proof.as_str()), Some("forged"), StatusCode::OK),
-        ] {
-            let mut req = axum::http::Request::builder().uri("/api/v1/overview");
-            if let Some(value) = new {
-                req = req.header("X-YeastCraft-Proxy-Proof", value);
-            }
-            if let Some(value) = old {
-                req = req.header("X-Fermentrack-Proxy-Proof", value);
-            }
-            let response = app
-                .clone()
-                .oneshot(req.body(axum::body::Body::empty()).unwrap())
-                .await
-                .unwrap();
-            assert_eq!(response.status(), expected);
-        }
         let res = app
             .clone()
             .oneshot(
                 axum::http::Request::builder()
                     .uri("/api/v1/auth/status")
-                    .header("X-Fermentrack-Proxy-Proof", &proof)
+                    .header("X-YeastCraft-Proxy-Proof", &proof)
                     .body(axum::body::Body::empty())
                     .unwrap(),
             )
@@ -859,7 +837,7 @@ mod proxy_auth_tests {
             "/api/v1/auth/login",
             "/api/v1/auth/password",
         ] {
-            let res=app.clone().oneshot(axum::http::Request::builder().method("POST").uri(path).header("Content-Type","application/json").header("X-Fermentrack-Proxy-Proof",&proof).body(axum::body::Body::from(json!({"username":"should-not-exist","password":"valid-test-password","old_password":"old","new_password":"new-test-password"}).to_string())).unwrap()).await.unwrap();
+            let res=app.clone().oneshot(axum::http::Request::builder().method("POST").uri(path).header("Content-Type","application/json").header("X-YeastCraft-Proxy-Proof",&proof).body(axum::body::Body::from(json!({"username":"should-not-exist","password":"valid-test-password","old_password":"old","new_password":"new-test-password"}).to_string())).unwrap()).await.unwrap();
             assert_eq!(res.status(), StatusCode::CONFLICT);
         }
         assert_eq!(
