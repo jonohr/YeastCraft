@@ -20,7 +20,7 @@ assert {i['arch'] for i in manifest['images']} == {'amd64', 'arm64', 'armv7'}
 root = Path(__file__).resolve().parents[1]
 commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip()
 assert manifest['commit'] == commit, 'Release tag and tested source differ'
-registry = 'ghcr.io/' + repo
+registry = 'ghcr.io/' + repo.split('/')[0] + '/yeastcraft'
 subprocess.run(['docker', 'login', 'ghcr.io', '-u', os.environ['REGISTRY_USER'], '--password-stdin'],
                input=os.environ['GH_TOKEN'] + '\n', text=True, check=True)
 try:

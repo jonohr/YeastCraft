@@ -36,7 +36,7 @@ pub async fn download(State(a): State<App>) -> Result<Response, ApiError> {
             (header::CONTENT_TYPE, "application/vnd.sqlite3"),
             (
                 header::CONTENT_DISPOSITION,
-                "attachment; filename=fermentrack-backup.sqlite",
+                "attachment; filename=yeastcraft-backup.sqlite",
             ),
         ],
         Body::from_stream(tokio_util::io::ReaderStream::new(input)),
@@ -88,7 +88,7 @@ pub async fn upload(
     if q.confirm && q.digest.as_deref() != Some(&digest) {
         return Err(ApiError::bad("Analyze the exact same backup first"));
     }
-    let result=a.db.run(move|c|{let source=Connection::open_with_flags(file.path(),OpenFlags::SQLITE_OPEN_READ_ONLY)?;let integrity:String=source.query_row("PRAGMA integrity_check",[],|r|r.get(0))?;anyhow::ensure!(integrity=="ok","Backup integrity check failed");let version:i64=source.query_row("SELECT version FROM backup_format",[],|r|r.get(0)).context("Not a Fermentrack Rust backup")?;anyhow::ensure!(version==1,"Unknown backup version");
+    let result=a.db.run(move|c|{let source=Connection::open_with_flags(file.path(),OpenFlags::SQLITE_OPEN_READ_ONLY)?;let integrity:String=source.query_row("PRAGMA integrity_check",[],|r|r.get(0))?;anyhow::ensure!(integrity=="ok","Backup integrity check failed");let version:i64=source.query_row("SELECT version FROM backup_format",[],|r|r.get(0)).context("Not a YeastCraft backup")?;anyhow::ensure!(version==1,"Unknown backup version");
  let mut count=0;for kind in db::KINDS{for e in db::list(&source,kind)?{db::validate(&e)?;count+=1;}}let total:i64=source.query_row("SELECT COUNT(*) FROM entities",[],|r|r.get(0))?;anyhow::ensure!(count==total,"Backup contains unsupported resource kinds");let points:i64=source.query_row("SELECT COUNT(*) FROM points",[],|r|r.get(0))?;
  let (first_measurement,last_measurement):(Option<i64>,Option<i64>)=source.query_row("SELECT MIN(time),MAX(time) FROM points",[],|r|Ok((r.get(0)?,r.get(1)?)))?;
  let sample_names:Vec<String>=["batches","devices","sensors"].into_iter().map(|kind|db::list(&source,kind)).collect::<anyhow::Result<Vec<_>>>()?.into_iter().flatten().take(8).map(|e|e.name).collect();

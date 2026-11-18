@@ -9,7 +9,10 @@ export default defineConfig({
   use: {
     baseURL: "http://127.0.0.1:8316",
     headless: true,
-    launchOptions: { executablePath: process.env.FERMENTRACK_CHROMIUM },
+    launchOptions: {
+      executablePath:
+        process.env.YEASTCRAFT_CHROMIUM ?? process.env.FERMENTRACK_CHROMIUM,
+    },
   },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },
@@ -19,7 +22,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `../rust/target/debug/fermentrack-rs --db ${testDatabase} --listen 127.0.0.1:8316 --static dist --import-root ../fixtures/browser --maintenance`,
+    command: `../rust/target/debug/yeastcraft --db ${testDatabase} --listen 127.0.0.1:8316 --static dist --import-root ../fixtures/browser --maintenance`,
     port: 8316,
     reuseExistingServer: false,
   },

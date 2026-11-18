@@ -42,7 +42,7 @@ with tempfile.TemporaryDirectory(prefix='ferm-sg-test-') as temp, Server(speed=3
         with urllib.request.urlopen(req, timeout=5) as r: return json.load(r)
     def start():
         global proc
-        proc = subprocess.Popen([str(ROOT/'rust/target/debug/fermentrack-rs'), '--db', str(db), '--listen', base.split('//')[1],
+        proc = subprocess.Popen([str(ROOT/'rust/target/debug/yeastcraft'), '--db', str(db), '--listen', base.split('//')[1],
             '--static', str(ROOT/'ui/dist'), '--import-root', temp, '--disable-internal-auth', '--proxy-proof-file', str(Path(temp,'proof')),
             '--enable-collection', '--enable-control'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         wait(lambda: api('auth/status'), 'server startup')

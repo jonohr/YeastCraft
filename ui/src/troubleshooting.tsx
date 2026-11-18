@@ -79,7 +79,7 @@ export default function Troubleshooting() {
         <h2>Gravity is missing or looks wrong?</h2>
         <p>
           First check that a packet contains an angle. Then check whether the
-          selected source is the device formula or a calibration in Fermentrack RS.
+          selected source is the device formula or a calibration in YeastCraft.
         </p>
         {sensors.map((s) => (
           <article key={s.id}>
@@ -90,7 +90,7 @@ export default function Troubleshooting() {
                 ? "Manual readings"
                 : s.data.gravity_source === "device"
                   ? "iSpindel device formula"
-                  : "Fermentrack RS calibration"}
+                  : "YeastCraft calibration"}
               .{" "}
               {s.data.last_values?.gravity_status &&
               s.data.last_values.gravity_status !== "ok"
@@ -111,7 +111,7 @@ export default function Troubleshooting() {
       <section className="card">
         <h2>Temperature is not changing?</h2>
         <p>
-          The controller operates cooling and heating; Fermentrack RS sends the
+          The controller operates cooling and heating; YeastCraft sends the
           target. Check the confirmed target, output state, probe roles and
           whether a profile is still running.
         </p>

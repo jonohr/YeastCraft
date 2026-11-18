@@ -39,7 +39,7 @@ with tempfile.TemporaryDirectory(prefix='fermentrack-standalone-') as temp, cham
 
     def start(maintenance=False):
         global proc
-        proc = subprocess.Popen([str(ROOT / 'rust/target/debug/fermentrack-rs'),
+        proc = subprocess.Popen([str(ROOT / 'rust/target/debug/yeastcraft'),
             '--db', str(Path(temp) / 'fresh.sqlite'), '--listen', f'127.0.0.1:{port}',
             '--static', str(ROOT / 'ui/dist'), '--import-root', temp,
             *(['--maintenance'] if maintenance else [])],

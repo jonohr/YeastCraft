@@ -27,30 +27,30 @@ COPY rust/Cargo.toml rust/Cargo.lock ./
 COPY rust/src ./src
 RUN --mount=type=cache,target=/usr/local/cargo/registry --mount=type=cache,id=rs-target-${TARGETARCH}-${TARGETVARIANT},target=/build/target \
     target="$(cat /build/rust-target)" && cargo build --release --locked --target "$target" -j2 && \
-    cp "target/$target/release/fermentrack-rs" /build/fermentrack-rs
+    cp "target/$target/release/yeastcraft" /build/yeastcraft
 
 FROM debian:bookworm-slim@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc AS runtime-files
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
-COPY --from=backend /build/fermentrack-rs /usr/local/bin/fermentrack-rs
+COPY --from=backend /build/yeastcraft /usr/local/bin/yeastcraft
 # Retain package provenance so vulnerability scanners can identify copied libraries.
 # The final image has no shell, package manager, compiler or Node runtime.
 RUN set -eu; \
     mkdir -p /runtime/usr/local/bin /runtime/etc/ssl/certs /runtime/var/lib/dpkg /runtime/usr/share/doc /runtime/app/state /runtime/app/private-import; \
-    ldd /usr/local/bin/fermentrack-rs > /tmp/runtime-libraries; \
+    ldd /usr/local/bin/yeastcraft > /tmp/runtime-libraries; \
     ! grep -q 'not found' /tmp/runtime-libraries; \
     for lib in $(awk '/=> \// {print $3} /^[[:space:]]*\// {print $1}' /tmp/runtime-libraries); do cp -L --parents "$lib" /runtime; done; \
-    cp /usr/local/bin/fermentrack-rs /runtime/usr/local/bin/; \
+    cp /usr/local/bin/yeastcraft /runtime/usr/local/bin/; \
     cp /etc/ssl/certs/ca-certificates.crt /runtime/etc/ssl/certs/; \
     cp -L /etc/os-release /etc/debian_version /runtime/etc/; \
     dpkg-query -s libc6 libgcc-s1 gcc-12-base ca-certificates > /runtime/var/lib/dpkg/status; \
     for package in libc6 libgcc-s1 gcc-12-base ca-certificates; do mkdir -p "/runtime/usr/share/doc/$package"; cp -L "/usr/share/doc/$package/copyright" "/runtime/usr/share/doc/$package/"; done; \
-    printf 'fermentrack:x:1000:1000:Fermentrack:/app:/nonexistent\n' > /runtime/etc/passwd; \
-    printf 'fermentrack:x:1000:\n' > /runtime/etc/group; \
+    printf 'yeastcraft:x:1000:1000:YeastCraft:/app:/nonexistent\n' > /runtime/etc/passwd; \
+    printf 'yeastcraft:x:1000:\n' > /runtime/etc/group; \
     printf 'hosts: files dns\n' > /runtime/etc/nsswitch.conf; \
     chown -R 1000:1000 /runtime/app
 COPY LICENSES/ /tmp/rs-licenses/
-RUN mkdir -p /runtime/usr/share/doc/fermentrack-rs && \
-    tar --sort=name --mtime=@0 --owner=0 --group=0 -czf /runtime/usr/share/doc/fermentrack-rs/licenses.tar.gz -C /tmp/rs-licenses .
+RUN mkdir -p /runtime/usr/share/doc/yeastcraft && \
+    tar --sort=name --mtime=@0 --owner=0 --group=0 -czf /runtime/usr/share/doc/yeastcraft/licenses.tar.gz -C /tmp/rs-licenses .
 
 FROM scratch
 ARG VCS_REF=unknown
@@ -60,12 +60,12 @@ LABEL org.opencontainers.image.source="https://github.com/jonohr/fermentrack-rs"
 COPY --from=runtime-files /runtime/ /
 WORKDIR /app
 COPY --from=ui /build/ui/dist /app/ui/dist
-COPY LICENSE NOTICE.md /usr/share/doc/fermentrack-rs/
+COPY LICENSE NOTICE.md /usr/share/doc/yeastcraft/
 USER 1000:1000
 ENV SQLITE_TMPDIR=/app/state
 # Release large temporary password-hashing buffers instead of retaining them in glibc arenas.
 ENV MALLOC_MMAP_THRESHOLD_=131072
 EXPOSE 8315
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 CMD ["/usr/local/bin/fermentrack-rs", "healthcheck"]
-ENTRYPOINT ["/usr/local/bin/fermentrack-rs"]
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 CMD ["/usr/local/bin/yeastcraft", "healthcheck"]
+ENTRYPOINT ["/usr/local/bin/yeastcraft"]
 CMD ["--listen","0.0.0.0:8315"]

@@ -378,7 +378,7 @@ async fn backup(State(a): State<App>) -> Result<Response, ApiError> {
     Ok((
         [(
             header::CONTENT_DISPOSITION,
-            "attachment; filename=fermentrack-backup.json",
+            "attachment; filename=yeastcraft-backup.json",
         )],
         Json(v),
     )
@@ -466,7 +466,7 @@ async fn main() -> anyhow::Result<()> {
     let args = std::env::args().skip(1).collect::<Vec<_>>();
     if args.iter().any(|a| a == "--help" || a == "-h") {
         println!(
-            "Fermentrack Rust\nserve (default): --db PATH --listen ADDRESS --static DIR --import-root DIR [--secure-cookie] [--disable-internal-auth --proxy-proof-file PATH] [--maintenance] [--disable-collection] [--disable-control] [--disable-export]\nCollection, control and export workers are available by default; configure equipment and destinations in the app. --maintenance disables all three.\nimport: --db PATH --source SQLITE --data DIR [--apply] (dry run by default)\nhealthcheck | --version"
+            "YeastCraft\nserve (default): --db PATH --listen ADDRESS --static DIR --import-root DIR [--secure-cookie] [--disable-internal-auth --proxy-proof-file PATH] [--maintenance] [--disable-collection] [--disable-control] [--disable-export]\nCollection, control and export workers are available by default; configure equipment and destinations in the app. --maintenance disables all three.\nimport: --db PATH --source SQLITE --data DIR [--apply] (dry run by default)\nhealthcheck | --version"
         );
         return Ok(());
     }
@@ -560,7 +560,7 @@ async fn main() -> anyhow::Result<()> {
     }
     let listen = opt("--listen", "127.0.0.1:8315");
     let listener = tokio::net::TcpListener::bind(&listen).await?;
-    println!("Fermentrack Rust listening on http://{listen}");
+    println!("YeastCraft listening on http://{listen}");
     axum::serve(
         listener,
         router(a, PathBuf::from(opt("--static", "ui/dist"))),
@@ -816,6 +816,28 @@ mod proxy_auth_tests {
                 .await
                 .unwrap();
             assert_eq!(res.status(), expected);
+        }
+        // Both deployment generations work; an invalid new header must not
+        // fall back to a valid old header when both are present.
+        for (new, old, expected) in [
+            (Some(proof.as_str()), None, StatusCode::OK),
+            (Some("forged"), None, StatusCode::FORBIDDEN),
+            (Some("forged"), Some(proof.as_str()), StatusCode::FORBIDDEN),
+            (Some(proof.as_str()), Some("forged"), StatusCode::OK),
+        ] {
+            let mut req = axum::http::Request::builder().uri("/api/v1/overview");
+            if let Some(value) = new {
+                req = req.header("X-YeastCraft-Proxy-Proof", value);
+            }
+            if let Some(value) = old {
+                req = req.header("X-Fermentrack-Proxy-Proof", value);
+            }
+            let response = app
+                .clone()
+                .oneshot(req.body(axum::body::Body::empty()).unwrap())
+                .await
+                .unwrap();
+            assert_eq!(response.status(), expected);
         }
         let res = app
             .clone()

@@ -356,7 +356,7 @@ test("external authentication skips local login and password management", async 
     proof = "e".repeat(64);
   writeFileSync(file, proof, { mode: 0o600 });
   const child = spawn(
-    "../rust/target/debug/fermentrack-rs",
+    "../rust/target/debug/yeastcraft",
     [
       "--db",
       db,

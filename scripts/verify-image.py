@@ -15,7 +15,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--image', default='fermentrack-rs:local')
+parser.add_argument('--image', default='yeastcraft:local')
 parser.add_argument('--platform')
 parser.add_argument('--qemu', type=pathlib.Path, help='Optional static QEMU user emulator')
 options = parser.parse_args()
@@ -26,7 +26,7 @@ containers = []
 
 
 def start(args, *positional, **kwargs):
-    if isinstance(args, list) and str(args[0]) == str(ROOT / 'rust/target/debug/fermentrack-rs'):
+    if isinstance(args, list) and str(args[0]) == str(ROOT / 'rust/target/debug/yeastcraft'):
         name = 'rs-image-check-' + secrets.token_hex(5)
         containers.append(name)
         mounts = {}
@@ -48,7 +48,7 @@ def start(args, *positional, **kwargs):
         dbdir = str(pathlib.Path(args[args.index('--db') + 1]).resolve().parent)
         cmd += ['-e', 'SQLITE_TMPDIR=' + dbdir, options.image]
         if options.qemu:
-            cmd += ['/usr/local/bin/fermentrack-rs']
+            cmd += ['/usr/local/bin/yeastcraft']
         args = [*cmd, *args[1:]]
     return original(args, *positional, **kwargs)
 

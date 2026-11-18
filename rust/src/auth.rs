@@ -70,7 +70,10 @@ fn proxy_valid(a: &App, h: &HeaderMap) -> bool {
     let Some(expected) = &a.proxy_proof else {
         return false;
     };
-    let Some(actual) = h.get("x-fermentrack-proxy-proof") else {
+    let Some(actual) = h
+        .get("x-yeastcraft-proxy-proof")
+        .or_else(|| h.get("x-fermentrack-proxy-proof"))
+    else {
         return false;
     };
     let want: [u8; 32] = Sha256::digest(expected.as_bytes()).into();

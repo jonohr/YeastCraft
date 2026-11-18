@@ -4,7 +4,7 @@
 set -eu
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 output=${1:-$(mktemp -d /tmp/fermentrack-audit.XXXXXX)}
-image=${2:-fermentrack-rs:local}
+image=${2:-yeastcraft:local}
 scanner=aquasec/trivy@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb
 mkdir -p "$output"
 output=$(CDPATH= cd -- "$output" && pwd)

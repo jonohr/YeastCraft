@@ -50,7 +50,8 @@ fn rows(c: &Connection, t: &str) -> Result<Vec<Value>> {
     Ok(out)
 }
 pub fn workdir(db: &Db) -> std::path::PathBuf {
-    std::env::var_os("FERMENTRACK_WORK_DIR")
+    std::env::var_os("YEASTCRAFT_WORK_DIR")
+        .or_else(|| std::env::var_os("FERMENTRACK_WORK_DIR"))
         .map(std::path::PathBuf::from)
         .unwrap_or_else(|| db.0.parent().unwrap_or(Path::new(".")).join("import-work"))
 }

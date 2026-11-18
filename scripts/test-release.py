@@ -30,13 +30,13 @@ class ReleaseChecks(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.folder = Path(self.temp.name)
-        archive(self.folder / 'fermentrack-rs-source.tar.gz', {
-            'fermentrack-rs-source/RELEASE-SOURCE.json': {'commit': COMMIT, 'runtime_packages': {'libc6': 'fixture'}}})
+        archive(self.folder / 'yeastcraft-source.tar.gz', {
+            'yeastcraft-source/RELEASE-SOURCE.json': {'commit': COMMIT, 'runtime_packages': {'libc6': 'fixture'}}})
         for arch in ['amd64', 'arm64', 'armv7']:
-            tag = f'fermentrack-rs:{COMMIT[:12]}-{arch}'
+            tag = f'yeastcraft:{COMMIT[:12]}-{arch}'
             config = json.dumps({'config': {'Labels': {'org.opencontainers.image.revision': COMMIT}}}).encode()
             image_id = 'sha256:' + hashlib.sha256(config).hexdigest()
-            filename = f'fermentrack-rs-linux-{arch}.docker.tar.gz'
+            filename = f'yeastcraft-linux-{arch}.docker.tar.gz'
             archive(self.folder / filename, {'manifest.json': [{'Config': 'config.json', 'RepoTags': [tag]}], 'config.json': config})
             (self.folder / f'image-{arch}.json').write_text(json.dumps({'commit': COMMIT, 'arch': arch,
                 'image_id': image_id, 'tag': tag, 'archive': filename, 'runtime_packages': {'libc6': 'fixture'}}))
@@ -53,12 +53,12 @@ class ReleaseChecks(unittest.TestCase):
         self.assertNotIn('build:', (self.folder / 'compose.yml').read_text())
 
     def test_old_source_bundle_rejected(self):
-        archive(self.folder / 'fermentrack-rs-source.tar.gz', {
-            'fermentrack-rs-source/RELEASE-SOURCE.json': {'commit': 'old', 'runtime_packages': {'libc6': 'fixture'}}})
+        archive(self.folder / 'yeastcraft-source.tar.gz', {
+            'yeastcraft-source/RELEASE-SOURCE.json': {'commit': 'old', 'runtime_packages': {'libc6': 'fixture'}}})
         self.assertNotEqual(self.run_assembly().returncode, 0)
 
     def test_missing_image_rejected(self):
-        (self.folder / 'fermentrack-rs-linux-armv7.docker.tar.gz').unlink()
+        (self.folder / 'yeastcraft-linux-armv7.docker.tar.gz').unlink()
         self.assertNotEqual(self.run_assembly().returncode, 0)
 
     def test_mismatched_library_sources_rejected(self):
@@ -68,8 +68,8 @@ class ReleaseChecks(unittest.TestCase):
         self.assertNotEqual(self.run_assembly().returncode, 0)
 
     def test_changed_image_config_rejected(self):
-        archive(self.folder / 'fermentrack-rs-linux-amd64.docker.tar.gz', {
-            'manifest.json': [{'Config': 'config.json', 'RepoTags': [f'fermentrack-rs:{COMMIT[:12]}-amd64']}],
+        archive(self.folder / 'yeastcraft-linux-amd64.docker.tar.gz', {
+            'manifest.json': [{'Config': 'config.json', 'RepoTags': [f'yeastcraft:{COMMIT[:12]}-amd64']}],
             'config.json': b'{}'})
         self.assertNotEqual(self.run_assembly().returncode, 0)
 

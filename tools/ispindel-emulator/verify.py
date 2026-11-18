@@ -26,7 +26,7 @@ with tempfile.TemporaryDirectory(prefix='ispindel-emulator-') as temp:
     Path(temp, 'proof').write_text(proof)
     base = f'http://127.0.0.1:{port()}'
     server = subprocess.Popen([
-        str(ROOT / 'rust/target/debug/fermentrack-rs'),
+        str(ROOT / 'rust/target/debug/yeastcraft'),
         '--db', str(Path(temp, 'test.sqlite')), '--listen', base.split('//')[1],
         '--static', str(ROOT / 'ui/dist'), '--import-root', temp,
         '--disable-internal-auth', '--proxy-proof-file', str(Path(temp, 'proof')),

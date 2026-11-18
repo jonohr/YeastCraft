@@ -19,9 +19,9 @@ assert info['Config']['Labels']['org.opencontainers.image.revision'] == commit, 
 assert info['Architecture'] == ('arm' if a.arch == 'armv7' else a.arch), 'Wrong image architecture'
 if a.arch == 'armv7':
     assert info.get('Variant') == 'v7', 'Wrong ARM variant'
-tag = f'fermentrack-rs:{commit[:12]}-{a.arch}'
+tag = f'yeastcraft:{commit[:12]}-{a.arch}'
 a.output.mkdir(parents=True, exist_ok=True)
-archive = a.output / f'fermentrack-rs-linux-{a.arch}.docker.tar.gz'
+archive = a.output / f'yeastcraft-linux-{a.arch}.docker.tar.gz'
 assert not archive.exists(), 'Refusing to overwrite image archive'
 container = subprocess.check_output(['docker', 'create', a.image], text=True).strip()
 try:
