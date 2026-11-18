@@ -14,7 +14,7 @@ the place to start using the app.
 | Area                 | Checks                                                                                                                       |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | Server               | 49 Rust tests; Clippy with warnings denied                                                                                   |
-| Interface            | 50 desktop/mobile Chromium tests; frontend production build                                                                  |
+| Interface            | 52 desktop/mobile Chromium tests; frontend production build                                                                  |
 | Fresh installation   | First account, login/logout, anonymous access rejection, account/profile persistence, non-root configuration and healthcheck |
 | Operational defaults | Normal worker availability, per-device configuration, explicit maintenance mode and conflicting CLI flags                    |
 | Profiles             | Timed and gravity steps, source separation, confirmations, restart persistence and target readback                           |
