@@ -42,3 +42,5 @@ is a plan, not a list of features you can use today.
 The validation and audit documents describe test coverage and its limits, not a
 promise that every board, firmware or future revision behaves identically. If
 your setup teaches us something new, please bring the details.
+
+- [Brewfather batch preview and credentials](BREWFATHER.md)

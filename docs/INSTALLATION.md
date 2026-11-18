@@ -45,8 +45,9 @@ Keep that name stable between batches; associate the device with your batch in
 Brewfather. Synthetic test readings belong in a separate, deliberately chosen test
 device, not your fermentation history. [Brewfather test evidence](VALIDATION.md#brewfather-delivery).
 
-Brewfather batch/profile import and gravity synchronization are
-[planned](https://github.com/jonohr/YeastCraft/issues/1), not currently available.
+Read-only Brewfather batch/profile preview is available from Integrations.
+See [Brewfather connection setup and limits](BREWFATHER.md). Creating a YC batch
+from that preview and measurement synchronization are not yet implemented.
 
 ## Network access and authentication
 
