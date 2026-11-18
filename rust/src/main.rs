@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 mod auth;
 mod backup;
+mod brewfather;
 mod calibration;
 mod db;
 mod gravity_profile;
@@ -129,6 +130,8 @@ fn router(a: App, static_dir: PathBuf) -> Router {
         )
         .route("/measurements/{source}", get(measurements))
         .route("/overview", get(overview))
+        .route("/brewfather/batches", get(brewfather::batches))
+        .route("/brewfather/batches/{id}", get(brewfather::batch))
         .route("/diagnostics", get(diagnostics))
         .route("/backup.sqlite", get(backup::download))
         .route(
@@ -635,6 +638,12 @@ mod tests {
                 .0,
             StatusCode::UNAUTHORIZED
         );
+        assert_eq!(
+            request(&app, "/api/v1/brewfather/batches", "GET", Value::Null, None)
+                .await
+                .0,
+            StatusCode::UNAUTHORIZED
+        );
         let credentials = json!({"username":"test","password":"twelve-characters-test"});
         assert_eq!(
             request(
@@ -668,6 +677,30 @@ mod tests {
             .split(';')
             .next()
             .unwrap();
+        assert_eq!(
+            request(
+                &app,
+                "/api/v1/brewfather/batches?after=bad%2Fpath",
+                "GET",
+                Value::Null,
+                Some(cookie)
+            )
+            .await
+            .0,
+            StatusCode::BAD_REQUEST
+        );
+        assert_eq!(
+            request(
+                &app,
+                "/api/v1/brewfather/batches",
+                "POST",
+                Value::Null,
+                Some(cookie)
+            )
+            .await
+            .0,
+            StatusCode::METHOD_NOT_ALLOWED
+        );
         let (_, _, e) = request(
             &app,
             "/api/v1/resources/devices",

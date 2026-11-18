@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Brewfather preview · YeastCraft</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <a class="brand" href="/">YeastCraft<span>BREWFATHER</span></a
+      ><span class="pill"><i></i> Read-only preview</span>
+    </header>
+    <main>
+      <section class="intro">
+        <p class="eyebrow">BREWFATHER CONNECTION</p>
+        <h1>Your next fermentation,<br /><span>in perspective.</span></h1>
+        <p>
+          Explore your batch, fermentation plan and readings before connecting
+          any equipment.
+        </p>
+      </section>
+      <div class="workspace">
+        <aside>
+          <div class="aside-heading">
+            <h2>Your batches</h2>
+            <span id="batch-count">—</span>
+          </div>
+          <label for="search">Find a batch</label
+          ><input
+            id="search"
+            type="search"
+            placeholder="Search name or batch number"
+          /><label for="batch">Select batch</label
+          ><select id="batch">
+            <option value="">Loading batches…</option></select
+          ><button id="more" hidden>Load more batches</button>
+          <p id="list-error" class="error" role="alert" hidden></p>
+          <button id="retry" class="secondary" hidden>Retry batch list</button>
+          <div class="aside-note">
+            <span class="small-label">PREVIEW ONLY</span>
+            <p>
+              Browse freely. Nothing here changes Brewfather or controls your
+              fridge.
+            </p>
+            <a href="/"
+              >Return to YeastCraft <span aria-hidden="true">↗</span></a
+            >
+          </div>
+        </aside>
+        <section id="detail" aria-label="Batch preview">
+          <div class="toolbar">
+            <span id="freshness" role="status">Choose a batch to explore</span
+            ><button id="refresh" disabled>
+              Refresh data <span aria-hidden="true">↻</span>
+            </button>
+          </div>
+          <p id="error" class="error" role="alert" hidden></p>
+          <div id="loading" hidden role="status">
+            Reading your batch from Brewfather…
+          </div>
+          <div id="empty" class="empty">
+            Your fermentation plan and readings will appear here.
+          </div>
+          <div id="content" hidden>
+            <div class="batch-title">
+              <div>
+                <p class="eyebrow" id="batch-number"></p>
+                <h2 id="name"></h2>
+                <p id="recipe"></p>
+              </div>
+              <span class="pill" id="status"></span>
+            </div>
+            <div class="stats">
+              <article>
+                <p>Original gravity</p>
+                <strong id="og">—</strong><span>Measured OG · SG</span>
+              </article>
+              <article>
+                <p>Final gravity</p>
+                <strong id="fg">—</strong><span>Measured FG · SG</span>
+              </article>
+              <article>
+                <p>Latest gravity reading</p>
+                <strong id="sg">—</strong
+                ><span id="sg-source">No reading yet</span>
+              </article>
+            </div>
+            <article class="panel candidate-panel" id="candidate-panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">YEASTCRAFT EXECUTION PREVIEW</p>
+                  <h3>How YC would run this batch</h3>
+                </div>
+                <span id="yc-duration" class="pill"></span>
+              </div>
+              <p class="footnote candidate-intro">
+                Starts from day zero when you start a new fermentation in YC.
+                Targets refer to beer temperature.
+              </p>
+              <div id="yc-adjustments" class="adjustments" hidden>
+                <h4>Adjustments to the source profile</h4>
+                <ul id="yc-warnings"></ul>
+              </div>
+              <p id="yc-blocked" class="error" role="alert" hidden></p>
+              <div id="yc-plan">
+                <div id="yc-chart" class="chart"></div>
+                <ol id="yc-steps" class="yc-steps"></ol>
+                <div class="end-control">
+                  <label for="end-behavior"
+                    >When the profile finishes<select id="end-behavior">
+                      <option value="hold">Keep the final temperature</option>
+                      <option value="off">Turn temperature control off</option>
+                    </select></label
+                  >
+                  <p id="yc-ending"></p>
+                </div>
+                <p class="footnote">
+                  Durations count from step entry, without waiting for the beer
+                  to reach its target. SG conditions can be added in YC later.
+                </p>
+              </div>
+              <p class="footnote">
+                Preview only. Nothing is saved to YC, started or sent to
+                equipment.
+              </p>
+            </article>
+            <details class="panel source-profile">
+              <summary>Brewfather source profile</summary>
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">SOURCE TEMPERATURE PLAN</p>
+                  <h3 id="profile-name">No profile</h3>
+                </div>
+                <span id="duration" class="subtle"></span>
+              </div>
+              <ol id="steps" class="steps"></ol>
+              <p class="footnote">
+                Source durations are hold times; ramps add time before the hold.
+                YC starts a new schedule rather than using old batch dates.
+              </p>
+            </details>
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">BATCH READINGS</p>
+                  <h3>Fermentation history</h3>
+                </div>
+                <label class="filter"
+                  >Show<select id="source">
+                    <option value="all">All sources</option>
+                    <option value="manual">Manual readings</option>
+                    <option value="device">Device readings</option>
+                  </select></label
+                >
+              </div>
+              <p id="history-note" class="footnote"></p>
+              <div class="chart-head">
+                <h4>Specific gravity</h4>
+                <span class="legend"
+                  >● Manual <span class="blue">━ Device</span></span
+                >
+              </div>
+              <div id="gravity-chart" class="chart"></div>
+              <div class="chart-head">
+                <h4>Temperature</h4>
+                <span class="legend blue"
+                  >°C · Sample / device temperature</span
+                >
+              </div>
+              <div id="temperature-chart" class="chart"></div>
+              <p class="footnote">
+                Charts show the readings returned by Brewfather; full historical
+                coverage is not confirmed. OG/FG are separate batch values.
+              </p>
+            </article>
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">MANUAL OBSERVATIONS</p>
+                  <h3>Your measurements</h3>
+                </div>
+                <span id="manual-count" class="subtle"></span>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Measured at</th>
+                      <th>SG</th>
+                      <th>Temperature</th>
+                    </tr>
+                  </thead>
+                  <tbody id="manual"></tbody>
+                </table>
+              </div>
+              <p id="manual-empty" class="footnote">
+                No manual readings in this batch.
+              </p>
+            </article>
+          </div>
+        </section>
+      </div>
+      <footer>
+        YeastCraft · Brewfather data · Refreshes on request, with a 60-second
+        cache.
+      </footer>
+    </main>
+  </body>
+</html>

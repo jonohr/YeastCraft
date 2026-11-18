@@ -879,6 +879,18 @@ function Collection({ kind }: { kind: string }) {
         </Button>
       </Heading>
       {kind === "integrations" && (
+        <section className="card">
+          <h2>Brewfather batches</h2>
+          <p>
+            Read start values and preview a fermentation profile before starting
+            in YeastCraft.
+          </p>
+          <a className="button" href="/brewfather/">
+            Browse Brewfather batches
+          </a>
+        </section>
+      )}
+      {kind === "integrations" && (
         <div className="alert">
           Enable both the destination and server exports before sending data.
           Preview the payload before enabling delivery.
