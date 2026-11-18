@@ -1,5 +1,20 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import { test, expect } from "@playwright/test";
+import { newestBrewfatherFirst } from "../src/brewfather-picker";
+test("Brewfather missing dates sort after real dates", () => {
+  const rows = [
+    { id: "missing", number: 99 },
+    { id: "old", number: 2, brew_date: 100 },
+    { id: "new", number: 3, brew_date: 200 },
+    { id: "invalid", number: 1, brew_date: NaN },
+  ];
+  expect(newestBrewfatherFirst(rows as any).map((b) => b.id)).toEqual([
+    "new",
+    "old",
+    "missing",
+    "invalid",
+  ]);
+});
 for (const source of ["brewfather", "yc"])
   test(`${source}: draft restoration and start retry`, async ({ page }) => {
     let batch: any = null,
@@ -58,6 +73,13 @@ for (const source of ["brewfather", "yc"])
       } else if (path.endsWith("/brewfather/batches"))
         body = {
           batches: [
+            {
+              ...recent,
+              id: "undated",
+              name: "Undated old beer",
+              number: 3,
+              brew_date: null,
+            },
             recent,
             { ...recent, id: "old", name: "Older beer", number: 45 },
           ],

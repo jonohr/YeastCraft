@@ -21,6 +21,19 @@ export type BrewfatherPlan = {
     warnings?: string[];
   };
 };
+// Upstream can put missing/malformed dates ahead of real brew dates.
+export function newestBrewfatherFirst(rows: BrewfatherPlan["batch"][]) {
+  const stamp = (b: BrewfatherPlan["batch"]) =>
+    typeof b.brew_date === "number" &&
+    Number.isFinite(new Date(b.brew_date).getTime())
+      ? b.brew_date
+      : -Infinity;
+  return [...rows].sort((a, b) => {
+    const x = stamp(a),
+      y = stamp(b);
+    return x === y ? (b.number ?? -1) - (a.number ?? -1) : x < y ? 1 : -1;
+  });
+}
 export default function BrewfatherPicker({
   selected,
   choose,
@@ -59,11 +72,13 @@ export default function BrewfatherPicker({
         "/brewfather/batches" +
           (after ? "?after=" + encodeURIComponent(after) : ""),
       );
-      setRows((old) => [
-        ...new Map(
-          [...(after ? old : []), ...result.batches].map((b) => [b.id, b]),
-        ).values(),
-      ]);
+      setRows((old) =>
+        newestBrewfatherFirst([
+          ...new Map(
+            [...(after ? old : []), ...result.batches].map((b) => [b.id, b]),
+          ).values(),
+        ]),
+      );
       setNext(result.next);
       if (after) setLimit((n) => n + 5);
     } catch (e) {
