@@ -2888,6 +2888,8 @@ function Backup() {
 }
 function SettingsPage({ internalAuth }: { internalAuth: boolean }) {
   const q = useLoad(() => list("settings"));
+  const [initialized, setInitialized] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [data, setData] = useState<any>({
       unit: "C",
       gravity_unit: "SG",
@@ -2897,7 +2899,10 @@ function SettingsPage({ internalAuth }: { internalAuth: boolean }) {
     }),
     [message, setMessage] = useState("");
   useEffect(() => {
-    if (q.data?.[0]) setData({ ...defaults, ...q.data[0].data });
+    if (q.data) {
+      setData({ ...defaults, ...q.data[0]?.data });
+      setInitialized(true);
+    }
   }, [q.data]);
   return (
     <>
@@ -2910,6 +2915,8 @@ function SettingsPage({ internalAuth }: { internalAuth: boolean }) {
           <form
             onSubmit={async (e) => {
               e.preventDefault();
+              if (!initialized || q.loading || saving) return;
+              setSaving(true);
               setMessage("");
               try {
                 await save("settings", "Settings", data, q.data?.[0]?.id);
@@ -2920,6 +2927,8 @@ function SettingsPage({ internalAuth }: { internalAuth: boolean }) {
                 setMessage("Preferences saved.");
               } catch (e) {
                 setMessage((e as Error).message);
+              } finally {
+                setSaving(false);
               }
             }}
           >
@@ -2949,6 +2958,7 @@ function SettingsPage({ internalAuth }: { internalAuth: boolean }) {
                 {label}
                 <select
                   aria-label={label}
+                  disabled={!initialized || q.loading || saving}
                   value={data[key]}
                   onChange={(e) => setData({ ...data, [key]: e.target.value })}
                 >
@@ -2966,7 +2976,10 @@ function SettingsPage({ internalAuth }: { internalAuth: boolean }) {
               Display units do not change stored measurements. Control targets
               and profiles use their configured temperature units.
             </div>
-            <Button>Save preferences</Button>
+            <ErrorBox message={q.error} />
+            <Button disabled={!initialized || q.loading || saving}>
+              Save preferences
+            </Button>
             <p role="status">{message}</p>
           </form>
           {internalAuth ? (

@@ -111,3 +111,71 @@ test("date format persists and changes displayed history without rewriting notes
   expect(stored.name).toBe("Mode set to p");
   expect(stored.data.text).toBe("Mode set to f");
 });
+
+test("preferences wait for stored settings before accepting edits", async ({
+  page,
+}) => {
+  let release!: () => void;
+  const loaded = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let settings = {
+    id: "existing",
+    kind: "settings",
+    name: "Settings",
+    data: { ...defaults, date_format: "DD.MM.YYYY" },
+  };
+  let saved: any = null;
+  await page.route("**/api/v1/**", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith("/auth/status"))
+      return route.fulfill({
+        json: { configured: true, authenticated: true, internal_auth: false },
+      });
+    if (
+      path.endsWith("/resources/settings") &&
+      route.request().method() === "GET"
+    ) {
+      await loaded;
+      return route.fulfill({ json: [settings] });
+    }
+    if (
+      path.includes("/resources/settings") &&
+      route.request().method() !== "GET"
+    ) {
+      saved = {
+        path,
+        method: route.request().method(),
+        ...route.request().postDataJSON(),
+      };
+      settings = { ...settings, data: saved.data };
+      return route.fulfill({ json: settings });
+    }
+    return route.fulfill({ json: [] });
+  });
+  await page.goto("/settings");
+  const appearance = page.getByLabel("Appearance", { exact: true });
+  try {
+    await expect(appearance).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Save preferences", exact: true }),
+    ).toBeDisabled();
+  } finally {
+    release();
+  }
+  await expect(appearance).toBeEnabled();
+  await expect(page.getByLabel("Date format", { exact: true })).toHaveValue(
+    "DD.MM.YYYY",
+  );
+  await appearance.selectOption("system");
+  await page
+    .getByRole("button", { name: "Save preferences", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toHaveText("Preferences saved.");
+  expect(saved.method).toBe("PUT");
+  expect(saved.path).toBe("/api/v1/resources/settings/existing");
+  expect(saved.data.theme).toBe("system");
+  expect(saved.data.date_format).toBe("DD.MM.YYYY");
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+});
