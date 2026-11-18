@@ -23,34 +23,45 @@ start equipment, synchronize readings or import historical batches. Charts
 show the readings returned by Brewfather for inspection only; full historical
 coverage is not assumed. The existing **Brewfather export** remains separate.
 
-## Server credentials
+## Connect your account
 
-Create a private file outside the repository with these two entries:
+Open **Settings → Integrations → Brewfather connection**. Enter your User ID
+and an API key with **batches.read** access, then choose **Connect Brewfather**.
+YC tests access before saving. A failed replacement preserves the previous
+connection. **Test connection** rechecks the stored credentials. **Disconnect**
+removes the connection and clears cached account data without changing local
+batches or temperature control.
 
-```ini
-BREWFATHER_USER_ID=your-user-id
-BREWFATHER_API_KEY=your-api-key
-```
+The API key input is masked and never prefilled from the server. No credential
+values are returned by the status, save or test APIs, or stored in browser local
+storage. TLS must protect remote access. The reusable connection form is ready
+for the planned batch-start flow; that flow remains a separate design change.
 
-Use a Brewfather API key with **batches.read** permission. Set the host file to
-owner-only access and mount it read-only, readable by the container user (UID
-1000 in the shipped image). Add this to a local Compose override:
+## Encryption and recovery
 
-```yaml
-services:
-  yeastcraft:
-    environment:
-      YEASTCRAFT_BREWFATHER_CREDENTIALS_FILE: /run/secrets/brewfather.env
-    volumes:
-      - /absolute/private/path/brewfather.env:/run/secrets/brewfather.env:ro
-```
+Both User ID and API key are encrypted with AES-256-GCM (ring), a fresh random
+96-bit nonce and versioned associated data before insertion into the dedicated
+SQLite `service_credentials` table. The 256-bit encryption key is a separate
+owner-only file; it is never in SQLite. By default its path is the database path
+with extension `.credentials.key`, created atomically on the first successful
+connection. The normal writable state volume therefore persists it across
+container recreation. Do not delete this file while retaining the database.
 
-Recreate the container after adding the mount/environment. Never paste keys into
-an issue, the browser, or a tracked Compose file. Without this setting, the page
-explains that Brewfather is not connected; other YC functionality is unaffected.
-The file is read server-side and is not included in database backups. Include it
-in your private secret recovery process. Restart YC after rotating credentials
-to clear cached data from the previous connection.
+For a separately managed key, set `YEASTCRAFT_CREDENTIAL_KEY_FILE` to a mounted
+file containing exactly32 random bytes, readable by the runtime user and mode600.
+The previous plaintext `YEASTCRAFT_BREWFATHER_CREDENTIALS_FILE` is no longer read.
+Do not paste credentials or encryption keys into issues or tracked config.
+
+Application JSON/SQLite exports omit the connection and its key; restoring
+application data keeps the destination's connection unchanged. Full host/database
+backups contain encrypted credentials and need the corresponding key to unlock
+them. Back up the key separately in private recovery storage. A missing or wrong
+key fails closed; YC does not silently replace it. Restore the correct key, or
+disconnect and connect again. Restart clears caches after manual recovery.
+
+Encryption protects a copied database without its key. It does not protect
+against someone who controls the running server and can read both. Previously
+created host backups may still contain the former plaintext credential file.
 
 ## Request and memory limits
 
