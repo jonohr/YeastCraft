@@ -35,7 +35,7 @@ report them. A verified private reporting route is required before public releas
 After building the standalone image, run:
 
 ```sh
-scripts/security-audit.sh /tmp/fermentrack-audit yeastcraft:local
+scripts/security-audit.sh /tmp/yeastcraft-audit yeastcraft:local
 npm --prefix ui audit
 ```
 

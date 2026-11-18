@@ -72,11 +72,6 @@ For all acceptance suites against a built image, run `python3 scripts/verify-ima
 See [CONTAINER.md](docs/CONTAINER.md) for ARM builds and optional QEMU testing, and
 [SECURITY.md](SECURITY.md) for reproducible scans and private reporting guidance.
 
-For an upgrade check against a previous local server build, run
-`python3 scripts/verify-upgrade.py /path/to/previous-server-binary`. This creates
-a disposable database, account, profile and disabled sensor, then reopens them
-with YeastCraft. It never reads an existing installation's database.
-
 On space-constrained development machines, use `CARGO_INCREMENTAL=0` and
 `CARGO_PROFILE_DEV_DEBUG=0` for local acceptance builds. Generated Rust `target/`
 directories can be rebuilt; runtime databases and backups must be preserved.

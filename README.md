@@ -79,9 +79,7 @@ docker compose -f compose.rust.yml up -d --build
 Open **http://SERVER-IP:8315** from your local network (or
 **http://localhost:8315** on the server itself) and create the first administrator account. There is
 no default username or password. The password must contain at least 12 characters.
-The database is stored in the Compose-managed `rust_state` volume.
-Already running RS? Follow the [upgrade steps](docs/INSTALLATION.md#upgrading-an-existing-rs-installation-to-yeastcraft)
-to keep your existing volume and controller connection.
+The database is stored in the Compose-managed `yeastcraft_state` volume.
 
 Collection, temperature control and exports are ready to use. Add your controller
 or sensor in the app; exports start only when you configure and enable a destination.
@@ -108,7 +106,7 @@ cargo build --locked --manifest-path rust/Cargo.toml
 npm --prefix ui ci
 npm --prefix ui run build
 mkdir -p state private-import
-rust/target/debug/yeastcraft --db state/fermentrack.sqlite --static ui/dist
+rust/target/debug/yeastcraft --db state/yeastcraft.sqlite --static ui/dist
 ```
 
 Tests:

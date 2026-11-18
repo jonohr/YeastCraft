@@ -66,8 +66,8 @@ network flooding and complete hardware certification remain outside this review.
 After building an image:
 
 ```sh
-scripts/security-audit.sh /tmp/fermentrack-audit yeastcraft:local
-python3 scripts/check-security-report.py /tmp/fermentrack-audit/source.json /tmp/fermentrack-audit/runtime.json
+scripts/security-audit.sh /tmp/yeastcraft-audit yeastcraft:local
+python3 scripts/check-security-report.py /tmp/yeastcraft-audit/source.json /tmp/yeastcraft-audit/runtime.json
 npm --prefix ui audit
 ```
 

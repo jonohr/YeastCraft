@@ -20,7 +20,6 @@ the place to start using the app.
 | Profiles             | Timed and gravity steps, source separation, confirmations, restart persistence and target readback                           |
 | iSpindel             | Real HTTP ingest, angle/device/server SG, calibration, history, invalid credentials and redirect rejection                   |
 | Tilt HTTP            | Synthetic protocol fixtures, units, identity, timestamps, duplicates, malformed packets, token rotation and restart behavior |
-| Rename compatibility | Previous server database reopened by YeastCraft; existing login, profile and sensor identity preserved; old/new proxy headers checked |
 | Import and restore   | Synthetic SQLite/CSV data, preview, validation, backup and restore                                                           |
 | Containers           | Fresh Compose and all emulator acceptance suites on native amd64 and emulated ARM64/ARMv7                                    |
 | Release assembly     | Matching source/image commits, runtime-library versions, image identities and checksums; deliberate mismatch rejection       |
@@ -54,8 +53,7 @@ and state were removed; the normal installation was unchanged.
 
 This verifies delivery and account display. It does not establish long-running
 export reliability or REST synchronization. Batch association is done in Brewfather.
-The current sender label is `YeastCraft` (covered by payload tests); real-account
-delivery was checked before the rename. The device name remains the selected
+Payload tests cover the `YeastCraft` sender label and preservation of the selected
 controller or sensor name. Other export services still need real-account checks.
 
 ## Scope and limits

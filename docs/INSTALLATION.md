@@ -107,7 +107,7 @@ For legacy import, keep a consistent SQLite database copy and stable CSV directo
 under ignored `private-import/`. Import never requires a running Django installation:
 
 ```sh
-rust/target/debug/yeastcraft import --db state/fermentrack.sqlite \
+rust/target/debug/yeastcraft import --db state/yeastcraft.sqlite \
   --source private-import/source.sqlite --data private-import/data
 # Review the report; append --apply only when ready.
 ```
@@ -138,29 +138,3 @@ so large temporary password-hashing buffers can be returned to the operating
 system after use. Password hashing strength is unchanged. Concurrent sign-ins still
 need temporary working memory; this is not a guarantee of a fixed maximum usage.
 See [memory verification](MEMORY.md) for measured values and methodology.
-
-## Upgrading an existing RS installation to YeastCraft
-
-The executable and image are now called `yeastcraft`; the Compose service is
-`yeastcraft`. The database format, default `state/fermentrack.sqlite` filename,
-`rust_state` volume key, UID/GID 1000 and port 8315 are unchanged. Existing
-accounts, profiles and measurements remain in the same database.
-
-Back up your database first. Stop the old Compose service using its existing
-manifest (`docker compose -f compose.rust.yml stop fermentrack-rs`) before
-switching to the new manifest and starting `yeastcraft`. Keep the **same Compose
-project name** (`-p YOUR_EXISTING_PROJECT`) and volume; changing the checkout
-folder can otherwise select a new empty volume. Do not use `down -v`.
-For a direct binary install, stop the old process, replace its command with
-`yeastcraft` and keep its working directory and `--db` argument.
-
-New configurations use `YEASTCRAFT_BIND_ADDRESS`, `YEASTCRAFT_WORK_DIR` and
-`X-YeastCraft-Proxy-Proof`. The previous `FERMENTRACK_*` variables and
-`X-Fermentrack-Proxy-Proof` header remain supported for upgrades. If both names
-are supplied, the new value wins. Keep proxy authentication enabled and overwrite
-the proof header at the trusted proxy as described above.
-
-Brewfather reports now identify the app as `YeastCraft`. The selected sensor or
-controller name stays unchanged, preserving the device name used for batch
-association. GitHub links currently use the existing `jonohr/fermentrack-rs`
-repository address; the repository itself has not yet been renamed.
