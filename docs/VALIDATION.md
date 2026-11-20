@@ -65,7 +65,10 @@ emulator suites and packaging/security checks run in addition.
 
 This establishes repeated delivery and batch association, not long-running
 reliability or a complete fermentation. **Finish batch** stopping delivery,
-disconnection, restore safety and duplicate prevention are automatically tested;
+disconnection, restore safety and duplicate prevention are automatically tested.
+Conflict tests cover both export activation orders, simultaneous activation,
+creation, source changes and equipment renames;
+
 live Finish batch acceptance and extended runtime observation remain pending.
 Automatic iSpindel SG export has synthetic coverage; this live check verified
 temperatures, not a fresh physical iSpindel measurement. Other export services

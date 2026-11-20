@@ -118,7 +118,11 @@ a batch also stops its incoming polling; temperature control follows the choice
 you make in the Finish batch flow. `--disable-export` and `--maintenance` block
 sending. Existing separately configured export destinations
 remain separate; stop a legacy Brewfather destination before enabling batch delivery
-under the same equipment name. Only one active batch may send under that name.
+under the same equipment name. Only one active writer may use that name across
+batch reporting and separate Brewfather exports. The check applies in either
+activation order, including creating an enabled export, changing its source,
+renaming equipment or enabling both paths concurrently. Conflicting configurations
+are also rejected before sending; disabling a conflicting export remains possible.
 
 See Brewfather's [Custom Stream](https://docs.brewfather.app/integrations/custom-stream)
 and [device attachment](https://docs.brewfather.app/devices) guides.
