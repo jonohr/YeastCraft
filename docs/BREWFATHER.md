@@ -94,7 +94,8 @@ is uploaded, and there is no automatic catch-up after an outage.
 Delivery is limited to once per 15 minutes per equipment name. The reservation is
 saved before a request, so restarting, re-enabling or switching batches does not
 bypass the interval. An unconfirmed delivery waits before retrying. **Last delivery
-accepted** means Custom Stream acknowledged the request; it does not prove the
+accepted** means Custom Stream returned HTTP success without an explicit rejection;
+it does not prove the
 device is attached to the correct batch.
 
 **Stop sending**, **Finish batch**, changing the linked batch/equipment, replacing
