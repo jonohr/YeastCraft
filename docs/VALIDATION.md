@@ -13,7 +13,7 @@ the place to start using the app.
 
 | Area                 | Checks                                                                                                                       |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Server               | 75 Rust tests; Clippy with warnings denied                                                                                   |
+| Server               | 76 Rust tests; Clippy with warnings denied                                                                                   |
 | Interface            | 66 desktop/mobile Chromium tests; frontend production build                                                                  |
 | Fresh installation   | First account, login/logout, anonymous access rejection, account/profile persistence, non-root configuration and healthcheck |
 | Operational defaults | Normal worker availability, per-device configuration, explicit maintenance mode and conflicting CLI flags                    |
@@ -58,8 +58,8 @@ real account, outside the automated test suite:
 - Application restarts preserved the profile, its start time, the manual readings
   and the persisted reporting interval. Desktop/mobile checks verified the live UI.
 
-The verified source revision was `0e14b2de17ba0b4f34978030d3c11ede67c23388`;
-[CI and candidate assembly](https://github.com/jonohr/YeastCraft/actions/runs/44732451045)
+The verified source revision was `f38812258d0cb4dbefea741c59632975c273fa7a`;
+[CI and candidate assembly](https://github.com/jonohr/YeastCraft/actions/runs/44737756730)
 passed for that revision. The server/interface counts above refer to that run;
 emulator suites and packaging/security checks run in addition.
 
@@ -67,9 +67,15 @@ This establishes repeated delivery and batch association, not long-running
 reliability or a complete fermentation. **Finish batch** stopping delivery,
 disconnection, restore safety and duplicate prevention are automatically tested.
 Conflict tests cover both export activation orders, simultaneous activation,
-creation, source changes and equipment renames;
+creation, source changes and equipment renames.
 
-live Finish batch acceptance and extended runtime observation remain pending.
+Live **Finish batch → Keep current temperature control and profile** was exercised
+through the normal UI. The batch completed, reporting was disabled and its saved
+history remained. The controller kept its profile/start and target, with fresh
+telemetry. Subsequent checks showed unchanged sync/export timestamps and no new
+batch points. Desktop/mobile views showed both sync and sending stopped. Other
+finish choices remain automatically tested; extended runtime observation is still
+pending.
 Automatic iSpindel SG export has synthetic coverage; this live check verified
 temperatures, not a fresh physical iSpindel measurement. Other export services
 still need real-account checks. No local manual SG export is implemented.
