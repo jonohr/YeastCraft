@@ -65,7 +65,9 @@ pub(crate) fn apply(
     rows: Option<&Value>,
     now: i64,
 ) -> Result<Value> {
-    let tx = c.transaction()?;
+    // Acquire the write reservation before reading batch/points. A deferred
+    // transaction cannot upgrade a WAL snapshot if collection writes meanwhile.
+    let tx = c.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
     let mut b = db::get(&tx, id)?;
     ensure!(
         b.kind == "batches" && b.data["status"] == "active" && b.data["brewfather"]["id"] == remote,
@@ -172,6 +174,31 @@ mod tests {
     }
     fn rows(sg: f64) -> Value {
         json!([{"time":2000,"sg":sg,"id":"manual","type":"manual"}])
+    }
+    #[test]
+    fn concurrent_writer_is_waited_for_before_reading_sync_state() {
+        let (_dir, db) = setup();
+        let mut writer = db.open().unwrap();
+        let tx = writer
+            .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
+            .unwrap();
+        let (send, recv) = std::sync::mpsc::channel();
+        let thread = std::thread::spawn(move || {
+            let mut c = db.open().unwrap();
+            send.send(apply(&mut c, "batch", "remote", Some(&rows(1.033)), 3000).is_ok())
+                .unwrap();
+        });
+        // Sync must wait for the writer, not fail while upgrading a read snapshot.
+        assert!(
+            recv.recv_timeout(std::time::Duration::from_millis(100))
+                .is_err()
+        );
+        tx.commit().unwrap();
+        assert!(
+            recv.recv_timeout(std::time::Duration::from_secs(5))
+                .unwrap()
+        );
+        thread.join().unwrap();
     }
     #[test]
     fn repeated_polls_restart_edits_and_deletions_preserve_local_measurements() {
