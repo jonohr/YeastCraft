@@ -269,7 +269,7 @@ fn select_readings(rows: &Value) -> Result<Value, ApiError> {
                 "Invalid reading timestamp. Previous view retained.",
             ));
         }
-        result.push(json!({"time":r["time"],"sg":number(&r["sg"]),"temp":number(&r["temp"]),"chamber":number(&r["aux_temp"]),"room":number(&r["ext_temp"]),"type":label(&r["type"]),"source":label(&r["id"])}));
+        result.push(json!({"time":r["time"],"sg":number(&r["sg"]),"temp":number(&r["temp"]),"chamber":number(r.get("fridgeTemp").unwrap_or(&r["aux_temp"])),"room":number(r.get("roomTemp").unwrap_or(&r["ext_temp"])),"type":label(&r["type"]),"source":label(&r["id"])}));
     }
     result.sort_by(|a, b| {
         a["time"]
@@ -737,6 +737,13 @@ mod tests {
     }
     #[test]
     fn readings_sorted_without_merging_or_zero_fill() {
+        let stream = select_readings(
+            &json!([{"time":3,"type":"stream","temp":19.4,"fridgeTemp":19.3,"roomTemp":24.6}]),
+        )
+        .unwrap_or_else(|_| panic!("invalid stream fixture"));
+        assert_eq!(stream[0]["chamber"], 19.3);
+        assert_eq!(stream[0]["room"], 24.6);
+
         let r=select_readings(&json!([{"time":2,"id":"manual","sg":1.04,"token":"hidden"},{"time":1,"sg":null},{"time":2,"id":"manual","sg":1.03}])).unwrap_or_else(|_|panic!("invalid fixture"));
         assert_eq!(r.as_array().unwrap().len(), 3);
         assert_eq!(r[0]["time"], 1);
