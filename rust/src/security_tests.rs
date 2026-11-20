@@ -515,3 +515,196 @@ async fn brewfather_stream_setup_is_private_opt_in_and_stops_with_batch() {
         StatusCode::OK
     );
 }
+
+#[tokio::test]
+async fn brewfather_export_conflicts_are_blocked_in_both_orders_and_concurrently() {
+    let t = tempfile::tempdir().unwrap();
+    let mut a = app(t.path());
+    a.exports = true;
+    credential_store::store_named(
+        &a.db,
+        &credential_store::key_path(&a.db),
+        "brewfather_stream",
+        &credential_store::Credentials {
+            user_id: "brewfather_stream".into(),
+            api_key: "synthetic".into(),
+        },
+    )
+    .unwrap();
+    let c = a.db.open().unwrap();
+    for e in [
+        Entity {
+            id: "d".into(),
+            kind: "devices".into(),
+            name: "Fridge".into(),
+            data: json!({}),
+        },
+        Entity {
+            id: "d2".into(),
+            kind: "devices".into(),
+            name: "Other fridge".into(),
+            data: json!({}),
+        },
+        Entity {
+            id: "b".into(),
+            kind: "batches".into(),
+            name: "Batch".into(),
+            data: json!({"status":"active","device":"d","brewfather":{"id":"remote"}}),
+        },
+        Entity {
+            id: "old".into(),
+            kind: "integrations".into(),
+            name: "Separate export".into(),
+            data: json!({"type":"brewfather","source":"d","enabled":false}),
+        },
+    ] {
+        db::put(&c, &e).unwrap();
+    }
+    // Router only: no workers, real equipment or external requests.
+    let r = router(a.clone(), t.path().into());
+    let cookie = login(&r).await;
+    let stream = "/api/v1/batches/b/brewfather-export";
+    let separate = "/api/v1/resources/integrations/old";
+    let target = |enabled, source| json!({"name":"Separate export","data":{"type":"brewfather","source":source,"enabled":enabled,"url":"https://example.invalid/stream"}});
+    assert_eq!(
+        req(
+            &r,
+            stream,
+            "PUT",
+            json!({"enabled":true}),
+            Some(&cookie),
+            None
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    assert_eq!(
+        req(&r, separate, "PUT", target(true, "d"), Some(&cookie), None)
+            .await
+            .0,
+        StatusCode::BAD_REQUEST
+    );
+    assert_eq!(
+        req(
+            &r,
+            "/api/v1/resources/integrations",
+            "POST",
+            target(true, "d"),
+            Some(&cookie),
+            None
+        )
+        .await
+        .0,
+        StatusCode::BAD_REQUEST
+    );
+    assert_eq!(
+        req(&r, separate, "PUT", target(true, "d2"), Some(&cookie), None)
+            .await
+            .0,
+        StatusCode::OK
+    );
+    assert_eq!(
+        req(&r, separate, "PUT", target(true, "d"), Some(&cookie), None)
+            .await
+            .0,
+        StatusCode::BAD_REQUEST
+    );
+    assert_eq!(
+        req(
+            &r,
+            "/api/v1/resources/devices/d2",
+            "PUT",
+            json!({"name":"Fridge","data":{}}),
+            Some(&cookie),
+            None
+        )
+        .await
+        .0,
+        StatusCode::BAD_REQUEST
+    );
+    assert_eq!(db::get(&c, "d2").unwrap().name, "Other fridge");
+    assert_eq!(db::get(&c, "old").unwrap().data["source"], "d2");
+    assert_eq!(
+        req(&r, separate, "PUT", target(false, "d"), Some(&cookie), None)
+            .await
+            .0,
+        StatusCode::OK
+    );
+    assert_eq!(
+        req(
+            &r,
+            stream,
+            "PUT",
+            json!({"enabled":false}),
+            Some(&cookie),
+            None
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    assert_eq!(
+        req(&r, separate, "PUT", target(true, "d"), Some(&cookie), None)
+            .await
+            .0,
+        StatusCode::OK
+    );
+    assert_eq!(
+        req(
+            &r,
+            stream,
+            "PUT",
+            json!({"enabled":true}),
+            Some(&cookie),
+            None
+        )
+        .await
+        .0,
+        StatusCode::BAD_REQUEST
+    );
+    assert_eq!(
+        req(&r, separate, "PUT", target(false, "d"), Some(&cookie), None)
+            .await
+            .0,
+        StatusCode::OK
+    );
+    let (one, two) = tokio::join!(
+        req(
+            &r,
+            stream,
+            "PUT",
+            json!({"enabled":true}),
+            Some(&cookie),
+            None
+        ),
+        req(&r, separate, "PUT", target(true, "d"), Some(&cookie), None)
+    );
+    assert!(
+        (one.0 == StatusCode::OK && two.0 == StatusCode::BAD_REQUEST)
+            || (two.0 == StatusCode::OK && one.0 == StatusCode::BAD_REQUEST)
+    );
+    let batch = db::get(&c, "b").unwrap();
+    let old = db::get(&c, "old").unwrap();
+    assert_ne!(
+        batch.data["brewfather_export"]["enabled"],
+        old.data["enabled"]
+    );
+    // Pre-existing conflicting state is refused by both worker checks, but
+    // disabling one writer remains possible for recovery.
+    let mut batch = batch;
+    batch.data["brewfather_export"]["enabled"] = json!(true);
+    db::put(&c, &batch).unwrap();
+    let mut old = old;
+    old.data["enabled"] = json!(true);
+    db::put(&c, &old).unwrap();
+    assert!(brewfather_stream::check_writers(&c, &batch).is_err());
+    assert!(brewfather_stream::check_writers(&c, &old).is_err());
+    assert_eq!(
+        req(&r, separate, "PUT", target(false, "d"), Some(&cookie), None)
+            .await
+            .0,
+        StatusCode::OK
+    );
+    assert!(brewfather_stream::check_writers(&c, &db::get(&c, "b").unwrap()).is_ok());
+}

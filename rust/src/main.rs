@@ -266,6 +266,7 @@ async fn create(
     Path(kind): Path<String>,
     Json(v): Json<Input>,
 ) -> Result<Json<Entity>, ApiError> {
+    let _export_operation = brewfather_stream::operation().lock().await;
     let e = Entity {
         id: uuid::Uuid::new_v4().to_string(),
         kind,
@@ -280,6 +281,7 @@ async fn create(
     }
     let e =
         a.db.run(move |c| {
+            brewfather_stream::check_writers(c, &e)?;
             db::put(c, &e)?;
             Ok(e)
         })
@@ -291,7 +293,10 @@ async fn update(
     Path((kind, id)): Path<(String, String)>,
     Json(v): Json<Input>,
 ) -> Result<Json<Entity>, ApiError> {
-    let _export_operation = if kind == "batches" {
+    let _export_operation = if matches!(
+        kind.as_str(),
+        "batches" | "integrations" | "devices" | "sensors"
+    ) {
         Some(brewfather_stream::operation().lock().await)
     } else {
         None
@@ -333,6 +338,7 @@ async fn update(
                     Value::Null
                 };
             }
+            brewfather_stream::check_writers(c, &e)?;
             db::put(c, &e)?;
             Ok(e)
         })
@@ -343,7 +349,10 @@ async fn remove(
     State(a): State<App>,
     Path((kind, id)): Path<(String, String)>,
 ) -> Result<Json<Value>, ApiError> {
-    let _export_operation = if kind == "batches" {
+    let _export_operation = if matches!(
+        kind.as_str(),
+        "batches" | "integrations" | "devices" | "sensors"
+    ) {
         Some(brewfather_stream::operation().lock().await)
     } else {
         None

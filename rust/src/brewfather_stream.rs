@@ -119,6 +119,58 @@ fn equipment(c: &Connection, b: &Entity) -> Result<Entity> {
     );
     Ok(e)
 }
+/// Check both export entry points, including source changes and equipment renames.
+/// Only conflicts involving the proposed edit block it, so existing bad setups
+/// can always be disabled without first repairing unrelated resources.
+pub(crate) fn check_writers(c: &Connection, candidate: &Entity) -> Result<()> {
+    if !matches!(
+        candidate.kind.as_str(),
+        "batches" | "integrations" | "devices" | "sensors"
+    ) {
+        return Ok(());
+    }
+    let mut writers = db::list(c, "batches")?;
+    writers.extend(db::list(c, "integrations")?);
+    writers.retain(|w| w.id != candidate.id);
+    if matches!(candidate.kind.as_str(), "batches" | "integrations") {
+        writers.push(candidate.clone());
+    }
+    let mut names = Vec::new();
+    for w in writers {
+        let source = if w.kind == "batches"
+            && w.data["status"] == "active"
+            && w.data["brewfather_export"]["enabled"] == true
+        {
+            w.data["device"].as_str().or(w.data["sensor"].as_str())
+        } else if w.kind == "integrations"
+            && w.data["type"] == "brewfather"
+            && w.data["enabled"] == true
+        {
+            w.data["source"].as_str().or(w.data["device"].as_str())
+        } else {
+            None
+        };
+        if let Some(source) = source {
+            let e = if source == candidate.id {
+                Some(candidate.clone())
+            } else {
+                db::get(c, source).ok()
+            };
+            if let Some(e) = e {
+                names.push((e.name, w.id == candidate.id || source == candidate.id));
+            }
+        }
+    }
+    for (name, affected) in &names {
+        if *affected {
+            ensure!(
+                names.iter().filter(|(n, _)| n == name).count() == 1,
+                "This equipment name already has an active Brewfather export. Stop the other export first."
+            );
+        }
+    }
+    Ok(())
+}
 fn status_value(c: &Connection, b: &Entity) -> Result<Value> {
     ensure!(
         b.kind == "batches" && b.data["brewfather"]["id"].is_string(),
@@ -168,36 +220,9 @@ pub async fn enable(
                 !v.enabled || b.data["status"] == "active",
                 "Only active batches can send readings"
             );
-            if v.enabled {
-                let name = equipment(&tx, &b)?.name;
-                for other in db::list(&tx, "batches")? {
-                    if other.id != id
-                        && other.data["status"] == "active"
-                        && other.data["brewfather_export"]["enabled"] == true
-                    {
-                        ensure!(
-                            equipment(&tx, &other)?.name != name,
-                            "This equipment name is already sending for another active batch"
-                        );
-                    }
-                }
-                for target in db::list(&tx, "integrations")? {
-                    if target.data["enabled"] == true && target.data["type"] == "brewfather" {
-                        let source = target.data["source"]
-                            .as_str()
-                            .or(target.data["device"].as_str())
-                            .unwrap_or("");
-                        if let Ok(e) = db::get(&tx, source) {
-                            ensure!(
-                                e.name != name,
-                                "Stop the separate Brewfather export for this equipment first"
-                            );
-                        }
-                    }
-                }
-            }
             state["enabled"] = json!(v.enabled);
             b.data["brewfather_export"] = state.clone();
+            check_writers(&tx, &b)?;
             db::put(&tx, &b)?;
             tx.commit()?;
             Ok(state)
@@ -289,6 +314,7 @@ fn reserve(c: &mut Connection, id: &str, now: i64) -> Result<Option<Value>> {
     if b.data["status"] != "active" || b.data["brewfather_export"]["enabled"] != true {
         return Ok(None);
     }
+    check_writers(&tx, &b)?;
     let name = equipment(&tx, &b)?.name;
     let next: Option<i64> = tx
         .query_row(
