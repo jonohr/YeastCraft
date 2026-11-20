@@ -41,11 +41,14 @@ to run it. Your fridge already has enough humming away.
 
 - BrewPi temperature collection and confirmed beer/chamber setpoints over TCP or serial.
 - Timed Hold/Ramp profiles and gravity-based step conditions.
+- Start a batch manually, with a saved YC profile, or with a Brewfather fermentation plan.
 - iSpindel ingestion, manual gravity readings and calibration from reference samples.
+- Sync manual SG readings from Brewfather into the linked active batch.
 - Experimental Tilt cloud HTTP and legacy TiltBridge receivers (hardware unverified).
 - Batch history, charts, controller-state bands and a bounded raw protocol log.
 - Local login, SQLite backup/restore and import from legacy Fermentrack SQLite/CSV data.
-- Send readings to Brewfather; other export adapters are implemented but need real-service testing.
+- Send active-batch equipment readings to Brewfather under the equipment’s own name.
+- Other export adapters are implemented but need real-service testing.
   Destinations send nothing until you configure and enable them.
 
 ## A little less RAM, please
@@ -139,12 +142,19 @@ installation checks.
 The [documentation index](docs/README.md) also links the test evidence, security
 review and licensing details.
 
-## What is brewing next?
+## Brewing with Brewfather
 
-Brewfather export already delivers readings. Next, we would like to bring a batch's
-fermentation plan and manual gravity readings back into YeastCraft, so you can plan in
-Brewfather and let YeastCraft run the chamber. That is **planned, not implemented**:
-[follow the integration proposal](https://github.com/jonohr/YeastCraft/issues/1).
+Start a new batch with a Brewfather fermentation plan and OG, then enter your
+manual SG measurements in Brewfather. YeastCraft brings those readings into the
+linked active batch. Enable Custom Stream to send fresh equipment temperatures
+and automatic iSpindel SG back under the equipment's own name; attach that device
+to the intended batch in Brewfather.
+
+Manual measurements entered directly in YeastCraft stay local. Existing batch
+history is not copied in either direction, and later recipe edits do not change
+a running temperature profile. [Connection and setup guide](docs/BREWFATHER.md).
+
+## Help it grow
 
 Found a rough edge? Have equipment we have not tried? [Open an issue](https://github.com/jonohr/YeastCraft/issues).
 A clear description or a careful hardware test is just as welcome as code.

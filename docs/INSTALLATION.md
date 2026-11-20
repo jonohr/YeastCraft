@@ -38,15 +38,28 @@ or configure the server calibration. A human-login reverse proxy must provide a
 separate reachable ingest path for sensors; do not disable authentication for the
 whole application. The sensor token authenticates ingest requests.
 
-For exports, configure and explicitly enable a destination in the app. Nothing is
-sent before a destination is configured and enabled. For Brewfather, the sender
-is **YeastCraft** and the device name is the selected controller or sensor name.
-Keep that name stable between batches; associate the device with your batch in
-Brewfather. Synthetic test readings belong in a separate, deliberately chosen test
-device, not your fermentation history. [Brewfather test evidence](VALIDATION.md#brewfather-delivery).
+Choose **Brewfather** in the two-step batch-start flow to use a batch's measured
+OG and fermentation plan. Connect there or under **Settings → Integrations**.
+YC starts a new local fermentation and syncs manual SG readings made in Brewfather
+from that batch's start onward. Enter manual measurements in Brewfather if you
+want them in both apps; measurements entered directly in YC remain local.
 
-Brewfather batch/profile import and gravity synchronization are
-[planned](https://github.com/jonohr/YeastCraft/issues/1), not currently available.
+To send equipment readings back, save the **Custom Stream** URL under Settings →
+Integrations, open the linked active batch and choose **Start sending**. After the
+first delivery, **Attach** the device in the intended Brewfather batch under
+Readings → Devices. The sender is **YeastCraft** and the device keeps its actual
+controller or sensor name between batches. Fresh temperatures and automatic
+iSpindel SG are sent at most once per 15 minutes. **Finish batch** stops this
+batch's reporting; check the attachment when starting the next batch.
+
+The API key and Custom Stream URL are separate connections; configuring one does
+not enable the other. Neither flow copies old batch history. See the
+[Brewfather guide](BREWFATHER.md) for encryption, setup and limits, and the
+[validation record](VALIDATION.md#brewfather-delivery) for what has been verified.
+
+Other export destinations are configured and enabled separately in the app.
+They remain off until explicitly enabled and still need real-service validation.
+Avoid a separate export targeting the same Brewfather device alongside batch reporting.
 
 ## Network access and authentication
 

@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 mod auth;
 mod backup;
+mod brewfather;
+mod brewfather_stream;
+mod brewfather_sync;
 mod calibration;
+mod credential_store;
 mod db;
 mod gravity_profile;
 mod import;
@@ -129,6 +133,35 @@ fn router(a: App, static_dir: PathBuf) -> Router {
         )
         .route("/measurements/{source}", get(measurements))
         .route("/overview", get(overview))
+        .route(
+            "/brewfather/connection",
+            get(brewfather::connection_status)
+                .put(brewfather::connect)
+                .delete(brewfather::disconnect)
+                .layer(DefaultBodyLimit::max(4096)),
+        )
+        .route(
+            "/brewfather/connection/test",
+            post(brewfather::test_connection),
+        )
+        .route(
+            "/batches/{id}/brewfather-sync",
+            post(brewfather::sync_batch),
+        )
+        .route(
+            "/brewfather/stream",
+            get(brewfather_stream::connection)
+                .put(brewfather_stream::configure)
+                .delete(brewfather_stream::disconnect)
+                .layer(DefaultBodyLimit::max(4096)),
+        )
+        .route(
+            "/batches/{id}/brewfather-export",
+            get(brewfather_stream::status).put(brewfather_stream::enable),
+        )
+        .route("/brewfather/batches", get(brewfather::batches))
+        .route("/brewfather/batches/{id}", get(brewfather::batch))
+        .route("/brewfather/batches/{id}/plan", get(brewfather::plan))
         .route("/diagnostics", get(diagnostics))
         .route("/backup.sqlite", get(backup::download))
         .route(
@@ -233,14 +266,22 @@ async fn create(
     Path(kind): Path<String>,
     Json(v): Json<Input>,
 ) -> Result<Json<Entity>, ApiError> {
+    let _export_operation = brewfather_stream::operation().lock().await;
     let e = Entity {
         id: uuid::Uuid::new_v4().to_string(),
         kind,
         name: v.name,
         data: v.data,
     };
+    let mut e = e;
+    if e.kind == "batches"
+        && let Some(data) = e.data.as_object_mut()
+    {
+        data.remove("brewfather_export");
+    }
     let e =
         a.db.run(move |c| {
+            brewfather_stream::check_writers(c, &e)?;
             db::put(c, &e)?;
             Ok(e)
         })
@@ -252,6 +293,14 @@ async fn update(
     Path((kind, id)): Path<(String, String)>,
     Json(v): Json<Input>,
 ) -> Result<Json<Entity>, ApiError> {
+    let _export_operation = if matches!(
+        kind.as_str(),
+        "batches" | "integrations" | "devices" | "sensors"
+    ) {
+        Some(brewfather_stream::operation().lock().await)
+    } else {
+        None
+    };
     let _operation = if kind == "devices" {
         Some(protocol::operation(&id).lock_owned().await)
     } else {
@@ -270,6 +319,18 @@ async fn update(
                 name: v.name,
                 data: v.data,
             };
+            if e.kind == "batches" {
+                e.data["brewfather_sync"] = old.data["brewfather_sync"].clone();
+                e.data["brewfather_export"] = old.data["brewfather_export"].clone();
+                if (e.data["status"] != "active"
+                    || e.data["brewfather"] != old.data["brewfather"]
+                    || e.data["device"] != old.data["device"]
+                    || e.data["sensor"] != old.data["sensor"])
+                    && e.data["brewfather_export"].is_object()
+                {
+                    e.data["brewfather_export"]["enabled"] = json!(false);
+                }
+            }
             if e.kind == "devices" {
                 e.data["profile_run"] = if e.data["profile"].is_string() {
                     old.data["profile_run"].clone()
@@ -277,6 +338,7 @@ async fn update(
                     Value::Null
                 };
             }
+            brewfather_stream::check_writers(c, &e)?;
             db::put(c, &e)?;
             Ok(e)
         })
@@ -287,6 +349,14 @@ async fn remove(
     State(a): State<App>,
     Path((kind, id)): Path<(String, String)>,
 ) -> Result<Json<Value>, ApiError> {
+    let _export_operation = if matches!(
+        kind.as_str(),
+        "batches" | "integrations" | "devices" | "sensors"
+    ) {
+        Some(brewfather_stream::operation().lock().await)
+    } else {
+        None
+    };
     let _operation = if kind == "devices" {
         Some(protocol::operation(&id).lock_owned().await)
     } else {
@@ -554,9 +624,11 @@ async fn main() -> anyhow::Result<()> {
     };
     if a.collection {
         tokio::spawn(protocol::collect(a.clone()));
+        tokio::spawn(brewfather_sync::worker(a.clone()));
     }
     if a.exports {
         tokio::spawn(integrations::worker(a.clone()));
+        tokio::spawn(brewfather_stream::worker(a.clone()));
     }
     let listen = opt("--listen", "127.0.0.1:8315");
     let listener = tokio::net::TcpListener::bind(&listen).await?;
@@ -635,6 +707,50 @@ mod tests {
                 .0,
             StatusCode::UNAUTHORIZED
         );
+        assert_eq!(
+            request(
+                &app,
+                "/api/v1/batches/test/brewfather-sync",
+                "POST",
+                json!({}),
+                None
+            )
+            .await
+            .0,
+            StatusCode::UNAUTHORIZED
+        );
+        assert_eq!(
+            request(&app, "/api/v1/brewfather/batches", "GET", Value::Null, None)
+                .await
+                .0,
+            StatusCode::UNAUTHORIZED
+        );
+        assert_eq!(
+            request(
+                &app,
+                "/api/v1/brewfather/batches/demo/plan",
+                "GET",
+                Value::Null,
+                None
+            )
+            .await
+            .0,
+            StatusCode::UNAUTHORIZED
+        );
+        for method in ["GET", "PUT", "DELETE"] {
+            assert_eq!(
+                request(
+                    &app,
+                    "/api/v1/brewfather/connection",
+                    method,
+                    json!({"user_id":"fake","api_key":"fake"}),
+                    None
+                )
+                .await
+                .0,
+                StatusCode::UNAUTHORIZED
+            );
+        }
         let credentials = json!({"username":"test","password":"twelve-characters-test"});
         assert_eq!(
             request(
@@ -668,6 +784,50 @@ mod tests {
             .split(';')
             .next()
             .unwrap();
+        assert_eq!(
+            request(
+                &app,
+                "/api/v1/brewfather/batches?after=bad%2Fpath",
+                "GET",
+                Value::Null,
+                Some(cookie)
+            )
+            .await
+            .0,
+            StatusCode::BAD_REQUEST
+        );
+        assert_eq!(
+            request(
+                &app,
+                "/api/v1/brewfather/batches",
+                "POST",
+                Value::Null,
+                Some(cookie)
+            )
+            .await
+            .0,
+            StatusCode::METHOD_NOT_ALLOWED
+        );
+        let (status, _, body) = request(
+            &app,
+            "/api/v1/brewfather/connection",
+            "GET",
+            Value::Null,
+            Some(cookie),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(body, json!({"connected":false,"encrypted":false}));
+        let (status, _, body) = request(
+            &app,
+            "/api/v1/brewfather/connection",
+            "PUT",
+            json!({"user_id":"bad:user","api_key":"never-return-this"}),
+            Some(cookie),
+        )
+        .await;
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        assert!(!body.to_string().contains("never-return-this"));
         let (_, _, e) = request(
             &app,
             "/api/v1/resources/devices",

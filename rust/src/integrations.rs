@@ -76,7 +76,14 @@ pub async fn worker(a: App) {
             a.db.run(|c| db::list(c, "integrations"))
                 .await
                 .unwrap_or_default();
-        for target in targets {
+        for snapshot in targets {
+            // Serialize with both configuration paths and batch completion. Read
+            // again after taking the lock: the earlier snapshot may be stale.
+            let _operation = crate::brewfather_stream::operation().lock().await;
+            let id = snapshot.id;
+            let Ok(target) = a.db.run(move |c| db::get(c, &id)).await else {
+                continue;
+            };
             if target.data["enabled"] != true {
                 continue;
             }
@@ -94,6 +101,7 @@ pub async fn worker(a: App) {
             let for_payload = target.clone();
             let data =
                 a.db.run(move |c| {
+                    crate::brewfather_stream::check_writers(c, &for_payload)?;
                     let s = db::get(
                         c,
                         for_payload.data["source"]

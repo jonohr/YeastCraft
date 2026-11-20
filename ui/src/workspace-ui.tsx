@@ -195,7 +195,9 @@ export function Metrics({
         sg?.toFixed(p.gravity_unit === "SG" ? 4 : 1) ?? "—",
         p.gravity_unit,
         v.reading_source === "manual"
-          ? "Manual measurement"
+          ? v.origin === "brewfather"
+            ? "Manual · Brewfather"
+            : "Manual measurement"
           : "Reported by Tilt sender",
       ];
       cards = [
@@ -657,7 +659,9 @@ export function MeasurementHistory({ points }: { points: any[] }) {
                   <td>{formatDate(v.time, p)}</td>
                   <td>
                     {v.values.reading_source === "manual"
-                      ? "Manual"
+                      ? v.values.origin === "brewfather"
+                        ? "Manual · Brewfather"
+                        : "Manual"
                       : v.values.gravity_source === "device"
                         ? "Device formula"
                         : v.values.gravity_source === "server"

@@ -141,6 +141,7 @@ test("setup/login, CRUD, notes, backup and responsive navigation", async ({
   await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
   await page.goto("/batches");
   await page.getByRole("button", { name: "Add", exact: true }).click();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page
     .getByRole("dialog")
     .getByLabel("Name", { exact: true })

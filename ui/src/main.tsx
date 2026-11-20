@@ -1,3 +1,6 @@
+import BrewfatherStream from "./brewfather-stream";
+import BrewfatherSync from "./brewfather-sync";
+import BrewfatherConnection from "./brewfather-connection";
 import ProtocolLog from "./protocol-log";
 import BatchStart from "./batch-start";
 import { batchStatus, newestFirst, profileSteps } from "./workflow";
@@ -878,6 +881,12 @@ function Collection({ kind }: { kind: string }) {
           Add
         </Button>
       </Heading>
+      {kind === "integrations" && (
+        <>
+          <BrewfatherConnection />
+          <BrewfatherStream />
+        </>
+      )}
       {kind === "integrations" && (
         <div className="alert">
           Enable both the destination and server exports before sending data.
@@ -1854,6 +1863,9 @@ function Detail({ kind, view }: { kind: string; view?: string }) {
           points={points}
           device={canControl ? controller : undefined}
         />
+      )}
+      {kind === "batches" && e.data.brewfather?.id && (
+        <BrewfatherSync batch={e} refresh={q.refresh} />
       )}
       {kind === "notes" && (
         <section className="card">

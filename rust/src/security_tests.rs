@@ -342,3 +342,369 @@ async fn legacy_import_rejects_symlink_escape_from_import_root() {
     assert_eq!(status, StatusCode::BAD_REQUEST);
     assert_eq!(body["error"], "Import paths must remain inside import root");
 }
+
+#[tokio::test]
+async fn brewfather_stream_setup_is_private_opt_in_and_stops_with_batch() {
+    let temp = tempfile::tempdir().unwrap();
+    let mut a = app(temp.path());
+    let disabled = router(a.clone(), temp.path().into());
+    a.exports = true; // No worker is started; this test never contacts Brewfather.
+    let r = router(a.clone(), temp.path().into());
+    for (path, method) in [
+        ("/api/v1/brewfather/stream", "GET"),
+        ("/api/v1/brewfather/stream", "PUT"),
+        ("/api/v1/brewfather/stream", "DELETE"),
+        ("/api/v1/batches/b/brewfather-export", "GET"),
+        ("/api/v1/batches/b/brewfather-export", "PUT"),
+    ] {
+        assert_eq!(
+            req(&r, path, method, json!({}), None, None).await.0,
+            StatusCode::UNAUTHORIZED
+        );
+    }
+    let cookie = login(&r).await;
+    let c = a.db.open().unwrap();
+    db::put(
+        &c,
+        &Entity {
+            id: "d".into(),
+            kind: "devices".into(),
+            name: "Lilla Kylen".into(),
+            data: json!({}),
+        },
+    )
+    .unwrap();
+    db::put(&c,&Entity{id:"b".into(),kind:"batches".into(),name:"Recipe name".into(),data:json!({"device":"d","status":"active","created":"2026-11-20T08:00:00Z","brewfather":{"id":"remote"}})}).unwrap();
+    let path = "/api/v1/batches/b/brewfather-export";
+    assert_eq!(
+        req(
+            &r,
+            path,
+            "PUT",
+            json!({"enabled":true}),
+            Some(&cookie),
+            None
+        )
+        .await
+        .0,
+        StatusCode::BAD_REQUEST
+    );
+    let url = json!({"url":"https://log.brewfather.net/stream?id=synthetic-private-id"});
+    let result = req(
+        &r,
+        "/api/v1/brewfather/stream",
+        "PUT",
+        url.clone(),
+        Some(&cookie),
+        None,
+    )
+    .await;
+    assert_eq!(result.0, StatusCode::OK);
+    assert_eq!(result.2["encrypted"], true);
+    assert!(!result.2.to_string().contains("synthetic-private-id"));
+    assert_eq!(
+        req(
+            &disabled,
+            path,
+            "PUT",
+            json!({"enabled":true}),
+            Some(&cookie),
+            None
+        )
+        .await
+        .0,
+        StatusCode::BAD_REQUEST
+    );
+    let state = req(
+        &r,
+        path,
+        "PUT",
+        json!({"enabled":true}),
+        Some(&cookie),
+        None,
+    )
+    .await;
+    assert_eq!(state.0, StatusCode::OK);
+    assert_eq!(state.2["device_name"], "Lilla Kylen");
+    // Generic edits cannot forge delivery receipts or change the destination silently.
+    let mut b = db::get(&c, "b").unwrap();
+    b.data["brewfather_export"] = json!({"enabled":false,"last_success":123});
+    let saved = req(
+        &r,
+        "/api/v1/resources/batches/b",
+        "PUT",
+        json!({"name":b.name,"data":b.data}),
+        Some(&cookie),
+        None,
+    )
+    .await;
+    assert_eq!(saved.0, StatusCode::OK);
+    assert_eq!(saved.2["data"]["brewfather_export"]["enabled"], true);
+    assert!(saved.2["data"]["brewfather_export"]["last_success"].is_null());
+    assert_eq!(
+        req(
+            &r,
+            "/api/v1/brewfather/stream",
+            "PUT",
+            url,
+            Some(&cookie),
+            None
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    assert_eq!(
+        db::get(&c, "b").unwrap().data["brewfather_export"]["enabled"],
+        false
+    );
+    assert_eq!(
+        req(
+            &r,
+            path,
+            "PUT",
+            json!({"enabled":true}),
+            Some(&cookie),
+            None
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    b.data["status"] = json!("completed");
+    let saved = req(
+        &r,
+        "/api/v1/resources/batches/b",
+        "PUT",
+        json!({"name":b.name,"data":b.data}),
+        Some(&cookie),
+        None,
+    )
+    .await;
+    assert_eq!(saved.0, StatusCode::OK);
+    assert_eq!(saved.2["data"]["brewfather_export"]["enabled"], false);
+    assert_eq!(
+        req(
+            &r,
+            path,
+            "PUT",
+            json!({"enabled":true}),
+            Some(&cookie),
+            None
+        )
+        .await
+        .0,
+        StatusCode::BAD_REQUEST
+    );
+    let backup = db::snapshot(&c).unwrap();
+    assert!(!backup.to_string().contains("synthetic-private-id"));
+    let mut restored = a.db.open().unwrap();
+    db::restore(&mut restored, backup).unwrap();
+    assert!(db::get(&restored, "b").unwrap().data["brewfather_export"].is_null());
+    assert_eq!(
+        req(
+            &r,
+            "/api/v1/brewfather/stream",
+            "DELETE",
+            json!({}),
+            Some(&cookie),
+            None
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+}
+
+#[tokio::test]
+async fn brewfather_export_conflicts_are_blocked_in_both_orders_and_concurrently() {
+    let t = tempfile::tempdir().unwrap();
+    let mut a = app(t.path());
+    a.exports = true;
+    credential_store::store_named(
+        &a.db,
+        &credential_store::key_path(&a.db),
+        "brewfather_stream",
+        &credential_store::Credentials {
+            user_id: "brewfather_stream".into(),
+            api_key: "synthetic".into(),
+        },
+    )
+    .unwrap();
+    let c = a.db.open().unwrap();
+    for e in [
+        Entity {
+            id: "d".into(),
+            kind: "devices".into(),
+            name: "Fridge".into(),
+            data: json!({}),
+        },
+        Entity {
+            id: "d2".into(),
+            kind: "devices".into(),
+            name: "Other fridge".into(),
+            data: json!({}),
+        },
+        Entity {
+            id: "b".into(),
+            kind: "batches".into(),
+            name: "Batch".into(),
+            data: json!({"status":"active","device":"d","brewfather":{"id":"remote"}}),
+        },
+        Entity {
+            id: "old".into(),
+            kind: "integrations".into(),
+            name: "Separate export".into(),
+            data: json!({"type":"brewfather","source":"d","enabled":false}),
+        },
+    ] {
+        db::put(&c, &e).unwrap();
+    }
+    // Router only: no workers, real equipment or external requests.
+    let r = router(a.clone(), t.path().into());
+    let cookie = login(&r).await;
+    let stream = "/api/v1/batches/b/brewfather-export";
+    let separate = "/api/v1/resources/integrations/old";
+    let target = |enabled, source| json!({"name":"Separate export","data":{"type":"brewfather","source":source,"enabled":enabled,"url":"https://example.invalid/stream"}});
+    assert_eq!(
+        req(
+            &r,
+            stream,
+            "PUT",
+            json!({"enabled":true}),
+            Some(&cookie),
+            None
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    assert_eq!(
+        req(&r, separate, "PUT", target(true, "d"), Some(&cookie), None)
+            .await
+            .0,
+        StatusCode::BAD_REQUEST
+    );
+    assert_eq!(
+        req(
+            &r,
+            "/api/v1/resources/integrations",
+            "POST",
+            target(true, "d"),
+            Some(&cookie),
+            None
+        )
+        .await
+        .0,
+        StatusCode::BAD_REQUEST
+    );
+    assert_eq!(
+        req(&r, separate, "PUT", target(true, "d2"), Some(&cookie), None)
+            .await
+            .0,
+        StatusCode::OK
+    );
+    assert_eq!(
+        req(&r, separate, "PUT", target(true, "d"), Some(&cookie), None)
+            .await
+            .0,
+        StatusCode::BAD_REQUEST
+    );
+    assert_eq!(
+        req(
+            &r,
+            "/api/v1/resources/devices/d2",
+            "PUT",
+            json!({"name":"Fridge","data":{}}),
+            Some(&cookie),
+            None
+        )
+        .await
+        .0,
+        StatusCode::BAD_REQUEST
+    );
+    assert_eq!(db::get(&c, "d2").unwrap().name, "Other fridge");
+    assert_eq!(db::get(&c, "old").unwrap().data["source"], "d2");
+    assert_eq!(
+        req(&r, separate, "PUT", target(false, "d"), Some(&cookie), None)
+            .await
+            .0,
+        StatusCode::OK
+    );
+    assert_eq!(
+        req(
+            &r,
+            stream,
+            "PUT",
+            json!({"enabled":false}),
+            Some(&cookie),
+            None
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    assert_eq!(
+        req(&r, separate, "PUT", target(true, "d"), Some(&cookie), None)
+            .await
+            .0,
+        StatusCode::OK
+    );
+    assert_eq!(
+        req(
+            &r,
+            stream,
+            "PUT",
+            json!({"enabled":true}),
+            Some(&cookie),
+            None
+        )
+        .await
+        .0,
+        StatusCode::BAD_REQUEST
+    );
+    assert_eq!(
+        req(&r, separate, "PUT", target(false, "d"), Some(&cookie), None)
+            .await
+            .0,
+        StatusCode::OK
+    );
+    let (one, two) = tokio::join!(
+        req(
+            &r,
+            stream,
+            "PUT",
+            json!({"enabled":true}),
+            Some(&cookie),
+            None
+        ),
+        req(&r, separate, "PUT", target(true, "d"), Some(&cookie), None)
+    );
+    assert!(
+        (one.0 == StatusCode::OK && two.0 == StatusCode::BAD_REQUEST)
+            || (two.0 == StatusCode::OK && one.0 == StatusCode::BAD_REQUEST)
+    );
+    let batch = db::get(&c, "b").unwrap();
+    let old = db::get(&c, "old").unwrap();
+    assert_ne!(
+        batch.data["brewfather_export"]["enabled"],
+        old.data["enabled"]
+    );
+    // Pre-existing conflicting state is refused by both worker checks, but
+    // disabling one writer remains possible for recovery.
+    let mut batch = batch;
+    batch.data["brewfather_export"]["enabled"] = json!(true);
+    db::put(&c, &batch).unwrap();
+    let mut old = old;
+    old.data["enabled"] = json!(true);
+    db::put(&c, &old).unwrap();
+    assert!(brewfather_stream::check_writers(&c, &batch).is_err());
+    assert!(brewfather_stream::check_writers(&c, &old).is_err());
+    assert_eq!(
+        req(&r, separate, "PUT", target(false, "d"), Some(&cookie), None)
+            .await
+            .0,
+        StatusCode::OK
+    );
+    assert!(brewfather_stream::check_writers(&c, &db::get(&c, "b").unwrap()).is_ok());
+}

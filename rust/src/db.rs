@@ -53,7 +53,8 @@ impl Db {
    CREATE TABLE IF NOT EXISTS users(name TEXT PRIMARY KEY,hash TEXT NOT NULL);
    CREATE TABLE IF NOT EXISTS sessions(token TEXT PRIMARY KEY,name TEXT NOT NULL,expires INTEGER NOT NULL);
    CREATE TABLE IF NOT EXISTS imports(digest TEXT PRIMARY KEY,report TEXT NOT NULL,created INTEGER NOT NULL);
-   CREATE TABLE IF NOT EXISTS audit(time INTEGER NOT NULL,action TEXT NOT NULL,detail TEXT NOT NULL);")?;
+   CREATE TABLE IF NOT EXISTS audit(time INTEGER NOT NULL,action TEXT NOT NULL,detail TEXT NOT NULL);
+   CREATE TABLE IF NOT EXISTS brewfather_delivery(name TEXT PRIMARY KEY,next_attempt INTEGER NOT NULL);")?;
         let has_sequence = c
             .prepare("PRAGMA table_info(points)")?
             .query_map([], |r| r.get::<_, String>(1))?
@@ -204,7 +205,9 @@ pub fn points(c: &Connection, source: &str, limit: usize) -> Result<Vec<Point>> 
     let stride = (count as usize)
         .div_ceil(limit.saturating_sub(1).max(1))
         .max(1);
-    let mut s=c.prepare("SELECT time,sequence,values_json FROM (SELECT time,sequence,values_json,ROW_NUMBER() OVER(ORDER BY time,sequence) AS n FROM points WHERE source=?) WHERE (n-1)%?=0 OR n=? ORDER BY time,sequence LIMIT ?")?;
+    // Sparse manual SG must not disappear among thousands of temperature samples.
+    // Keep the latest 1000 manual points in addition to the bounded sampled series.
+    let mut s=c.prepare("WITH sampled AS (SELECT time,sequence,values_json FROM (SELECT time,sequence,values_json,ROW_NUMBER() OVER(ORDER BY time,sequence) AS n FROM points WHERE source=?1) WHERE (n-1)%?2=0 OR n=?3 ORDER BY time,sequence LIMIT ?4), manual AS (SELECT time,sequence,values_json FROM points WHERE source=?1 AND json_extract(values_json,'$.reading_source')='manual' ORDER BY time DESC,sequence DESC LIMIT 1000) SELECT * FROM (SELECT * FROM sampled UNION SELECT * FROM manual) ORDER BY time,sequence")?;
     let rows = s.query_map(
         params![source, stride as i64, count, limit as i64 + 1],
         |r| Ok((r.get(0)?, r.get(1)?, r.get::<_, String>(2)?)),
@@ -274,6 +277,9 @@ pub fn restore(c: &mut Connection, v: Value) -> Result<Value> {
         }
         if e.kind == "integrations" {
             e.data["enabled"] = json!(false);
+        }
+        if e.kind == "batches" {
+            e.data.as_object_mut().unwrap().remove("brewfather_export");
         }
         put(&tx, &e)?;
     }

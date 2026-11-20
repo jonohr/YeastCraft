@@ -159,11 +159,28 @@ pub fn tick(c: &Connection, d: &mut db::Entity, now: i64, unit: &str) -> Result<
             );
             let source = p["gravity_readings"].as_str().unwrap();
             if source == "manual" || sensor.data["collection_enabled"] == true {
-                let mut q = c.prepare("SELECT time,values_json FROM points WHERE source=?1 AND time>?2 AND time<=?3 AND json_extract(values_json,'$.reading_source')=?4 ORDER BY time DESC,sequence DESC LIMIT 10000")?;
+                // Brewfather manual readings belong to the active batch, never to
+                // a reusable sensor or another fermentation on that sensor.
+                let batches = db::list(c, "batches")?;
+                let linked: Vec<_> = batches
+                    .iter()
+                    .filter(|b| {
+                        b.data["status"] == "active"
+                            && b.data["device"] == d.id
+                            && b.data["sensor"] == sensor.id
+                    })
+                    .collect();
+                let batch_source = if source == "manual" && linked.len() == 1 {
+                    linked[0].id.as_str()
+                } else {
+                    ""
+                };
+                let mut q = c.prepare("SELECT time,values_json FROM points WHERE (source=?1 OR (source=?5 AND json_extract(values_json,'$.origin')='brewfather')) AND time>?2 AND time<=?3 AND json_extract(values_json,'$.reading_source')=?4 ORDER BY time DESC,sequence DESC LIMIT 10000")?;
                 let rows = q
-                    .query_map(params![sensor.id, entered, now, source], |r| {
-                        Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?))
-                    })?
+                    .query_map(
+                        params![sensor.id, entered, now, source, batch_source],
+                        |r| Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?)),
+                    )?
                     .map(|row| {
                         let (t, v) = row?;
                         Ok((t, serde_json::from_str::<Value>(&v)?))
