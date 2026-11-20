@@ -1,3 +1,4 @@
+import BrewfatherSync from "./brewfather-sync";
 import BrewfatherConnection from "./brewfather-connection";
 import ProtocolLog from "./protocol-log";
 import BatchStart from "./batch-start";
@@ -1856,6 +1857,9 @@ function Detail({ kind, view }: { kind: string; view?: string }) {
           points={points}
           device={canControl ? controller : undefined}
         />
+      )}
+      {kind === "batches" && e.data.brewfather?.id && (
+        <BrewfatherSync batch={e} refresh={q.refresh} />
       )}
       {kind === "notes" && (
         <section className="card">

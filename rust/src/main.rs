@@ -2,6 +2,7 @@
 mod auth;
 mod backup;
 mod brewfather;
+mod brewfather_sync;
 mod calibration;
 mod credential_store;
 mod db;
@@ -141,6 +142,10 @@ fn router(a: App, static_dir: PathBuf) -> Router {
         .route(
             "/brewfather/connection/test",
             post(brewfather::test_connection),
+        )
+        .route(
+            "/batches/{id}/brewfather-sync",
+            post(brewfather::sync_batch),
         )
         .route("/brewfather/batches", get(brewfather::batches))
         .route("/brewfather/batches/{id}", get(brewfather::batch))
@@ -286,6 +291,9 @@ async fn update(
                 name: v.name,
                 data: v.data,
             };
+            if e.kind == "batches" {
+                e.data["brewfather_sync"] = old.data["brewfather_sync"].clone();
+            }
             if e.kind == "devices" {
                 e.data["profile_run"] = if e.data["profile"].is_string() {
                     old.data["profile_run"].clone()
@@ -570,6 +578,7 @@ async fn main() -> anyhow::Result<()> {
     };
     if a.collection {
         tokio::spawn(protocol::collect(a.clone()));
+        tokio::spawn(brewfather_sync::worker(a.clone()));
     }
     if a.exports {
         tokio::spawn(integrations::worker(a.clone()));
@@ -649,6 +658,18 @@ mod tests {
             request(&app, "/api/v1/resources/devices", "GET", Value::Null, None)
                 .await
                 .0,
+            StatusCode::UNAUTHORIZED
+        );
+        assert_eq!(
+            request(
+                &app,
+                "/api/v1/batches/test/brewfather-sync",
+                "POST",
+                json!({}),
+                None
+            )
+            .await
+            .0,
             StatusCode::UNAUTHORIZED
         );
         assert_eq!(

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-//! Read-only Brewfather preview with encrypted local credentials. No controller access.
+//! Brewfather reads with encrypted credentials. No upstream writes or controller access.
 use crate::{
     ApiError, App,
     credential_store::{self, Credentials},
@@ -435,6 +435,53 @@ fn translate(source: &Value) -> Result<Value, String> {
         json!({"status":"ready","profile":{"unit":"C","control_sensor":"beer","end_behavior":"hold","steps":steps},"total_hours":total,"warnings":warnings}),
     )
 }
+// Sync is serialized with connection replacement/disconnection and preview reads.
+pub(crate) async fn sync_readings(a: &App, local_id: &str) -> Result<Value, ApiError> {
+    if !a.collection {
+        return Err(ApiError::bad("Collection is disabled"));
+    }
+    let mut client = CLIENT.get_or_init(Default::default).lock().await;
+    sync_with_client(a, local_id, &mut client).await
+}
+async fn sync_with_client(a: &App, local_id: &str, client: &mut Client) -> Result<Value, ApiError> {
+    let local = local_id.to_owned();
+    let batch = a.db.run(move |c| crate::db::get(c, &local)).await?;
+    let remote = batch.data["brewfather"]["id"].as_str().unwrap_or("");
+    if batch.kind != "batches" || batch.data["status"] != "active" || !valid_id(remote) {
+        return Err(ApiError::bad("Choose an active Brewfather-linked batch"));
+    }
+    let now = chrono::Utc::now().timestamp_millis();
+    if now
+        - batch.data["brewfather_sync"]["last_attempt"]
+            .as_i64()
+            .unwrap_or(0)
+        < 60_000
+    {
+        return Ok(batch.data["brewfather_sync"].clone());
+    }
+    let result = async {
+        let credentials = credentials(a)?;
+        let (_, rows) = client
+            .get(&format!("batches/{remote}/readings"), 60, &credentials)
+            .await?;
+        Ok::<Value, ApiError>(rows)
+    }
+    .await;
+    let remote = remote.to_owned();
+    let local = local_id.to_owned();
+    // Never persist credentials, upstream bodies or transport errors in status.
+    Ok(a.db
+        .run(move |c| crate::brewfather_sync::apply(c, &local, &remote, result.ok().as_ref(), now))
+        .await?)
+}
+
+pub async fn sync_batch(
+    State(a): State<App>,
+    Path(id): Path<String>,
+) -> Result<Json<Value>, ApiError> {
+    Ok(Json(sync_readings(&a, &id).await?))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -488,6 +535,71 @@ mod tests {
                 assert_eq!(stored.api_key, "original-key");
             }
         }
+    }
+    #[tokio::test]
+    async fn sync_fetches_only_readings_and_throttles_duplicate_requests() {
+        use std::sync::{Arc, Mutex as StdMutex};
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let dir = tempfile::tempdir().unwrap();
+        let a = App {
+            db: crate::db::Db::init(dir.path().join("sync.sqlite")).unwrap(),
+            secure_cookie: false,
+            proxy_proof: None,
+            import_root: Arc::new(dir.path().into()),
+            collection: true,
+            control: false,
+            exports: false,
+            failures: Arc::new(StdMutex::new(Default::default())),
+            auth_slots: Arc::new(tokio::sync::Semaphore::new(2)),
+        };
+        let creds = Credentials {
+            user_id: "synthetic".into(),
+            api_key: "synthetic".into(),
+        };
+        credential_store::store(&a.db, &credential_store::key_path(&a.db), &creds).unwrap();
+        let now = chrono::Utc::now().timestamp_millis();
+        crate::db::put(&a.db.open().unwrap(),&crate::db::Entity{id:"local".into(),kind:"batches".into(),name:"Synthetic".into(),data:json!({"status":"active","created":"2026-01-01T00:00:00Z","brewfather":{"id":"remote"}})}).unwrap();
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let mut client = Client {
+            test_base: Some(format!("http://{}/", listener.local_addr().unwrap())),
+            ..Client::default()
+        };
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut buf = [0; 4096];
+            let n = socket.read(&mut buf).await.unwrap();
+            assert!(
+                String::from_utf8_lossy(&buf[..n]).starts_with("GET /batches/remote/readings ")
+            );
+            let body =
+                json!([{"time":now-1000,"sg":1.033,"type":"manual","id":"manual"}]).to_string();
+            socket
+                .write_all(
+                    format!(
+                        "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                        body.len()
+                    )
+                    .as_bytes(),
+                )
+                .await
+                .unwrap();
+        });
+        let result = sync_with_client(&a, "local", &mut client)
+            .await
+            .unwrap_or_else(|e| panic!("{}", e.1));
+        assert_eq!(result["latest"]["sg"], 1.033);
+        server.await.unwrap();
+        let again = sync_with_client(&a, "local", &mut client)
+            .await
+            .unwrap_or_else(|e| panic!("{}", e.1));
+        assert_eq!(again, result);
+        assert_eq!(client.calls.len(), 1);
+        assert_eq!(
+            crate::db::points(&a.db.open().unwrap(), "local", 100)
+                .unwrap()
+                .len(),
+            1
+        );
     }
     #[tokio::test]
     async fn start_plan_only_fetches_profile_and_projects_start_values() {

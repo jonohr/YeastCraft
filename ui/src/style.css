@@ -3277,3 +3277,8 @@ input[type="checkbox"] {
 
 .batch-fields { overflow: visible; }
 .batch-fields-scroll { overflow-y: auto; min-height: 0; padding-right: 4px; }
+
+.brewfather-sync .section-title { flex-wrap: wrap; gap: 0.75rem; }
+.brewfather-sync .section-title h2 { margin: 0; }
+.brewfather-sync .section-title button { flex: none; white-space: nowrap; }
+.brewfather-sync p { overflow-wrap: anywhere; }

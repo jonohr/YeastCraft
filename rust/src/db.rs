@@ -204,7 +204,9 @@ pub fn points(c: &Connection, source: &str, limit: usize) -> Result<Vec<Point>> 
     let stride = (count as usize)
         .div_ceil(limit.saturating_sub(1).max(1))
         .max(1);
-    let mut s=c.prepare("SELECT time,sequence,values_json FROM (SELECT time,sequence,values_json,ROW_NUMBER() OVER(ORDER BY time,sequence) AS n FROM points WHERE source=?) WHERE (n-1)%?=0 OR n=? ORDER BY time,sequence LIMIT ?")?;
+    // Sparse manual SG must not disappear among thousands of temperature samples.
+    // Keep the latest 1000 manual points in addition to the bounded sampled series.
+    let mut s=c.prepare("WITH sampled AS (SELECT time,sequence,values_json FROM (SELECT time,sequence,values_json,ROW_NUMBER() OVER(ORDER BY time,sequence) AS n FROM points WHERE source=?1) WHERE (n-1)%?2=0 OR n=?3 ORDER BY time,sequence LIMIT ?4), manual AS (SELECT time,sequence,values_json FROM points WHERE source=?1 AND json_extract(values_json,'$.reading_source')='manual' ORDER BY time DESC,sequence DESC LIMIT 1000) SELECT * FROM (SELECT * FROM sampled UNION SELECT * FROM manual) ORDER BY time,sequence")?;
     let rows = s.query_map(
         params![source, stride as i64, count, limit as i64 + 1],
         |r| Ok((r.get(0)?, r.get(1)?, r.get::<_, String>(2)?)),
