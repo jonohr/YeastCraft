@@ -142,13 +142,19 @@ installation checks.
 The [documentation index](docs/README.md) also links the test evidence, security
 review and licensing details.
 
-## What is brewing next?
+## Brewing with Brewfather
 
-Brewfather can supply a starting fermentation plan and manual SG readings for the
-linked active batch. Outbound Custom Stream export is separate; automatic
-bidirectional measurement synchronization is not implemented.
-[Connection guide](docs/BREWFATHER.md) ·
-[Integration proposal](https://github.com/jonohr/YeastCraft/issues/1).
+Start a new batch with a Brewfather fermentation plan and OG, then enter your
+manual SG measurements in Brewfather. YeastCraft brings those readings into the
+linked active batch. Enable Custom Stream to send fresh equipment temperatures
+and automatic iSpindel SG back under the equipment's own name; attach that device
+to the intended batch in Brewfather.
+
+Manual measurements entered directly in YeastCraft stay local. Existing batch
+history is not copied in either direction, and later recipe edits do not change
+a running temperature profile. [Connection and setup guide](docs/BREWFATHER.md).
+
+## Help it grow
 
 Found a rough edge? Have equipment we have not tried? [Open an issue](https://github.com/jonohr/YeastCraft/issues).
 A clear description or a careful hardware test is just as welcome as code.

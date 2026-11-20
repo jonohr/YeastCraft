@@ -1,4 +1,18 @@
-# Brewfather connection and batch start
+# Brewfather: batch plans and measurements
+
+Use Brewfather for the recipe and manual measurements, and YeastCraft to run the
+fridge. The two connections have different jobs:
+
+| Flow | What is transferred |
+| --- | --- |
+| Brewfather → YC at batch start | Fermentation plan and measured OG |
+| Brewfather → active YC batch | Manual SG readings from the batch's start onward |
+| YC → Brewfather through Custom Stream | Fresh equipment temperatures and automatic iSpindel SG |
+
+Manual measurements entered directly in YC stay local. Imported Brewfather
+measurements are never sent back. Neither direction copies old batch history.
+
+## Start a batch
 
 Choose **Add** under Batches (or **New batch** on Overview), then choose
 **Manual**, **YC profile**, or **Brewfather**. This is one two-step flow:
@@ -15,8 +29,9 @@ starts a new local fermentation from the first step. **Save draft** preserves
 the selected plan, OG and equipment without assigning a profile or sending a
 command. Reopening the draft retains the choice. **Start batch** makes a local
 copy of a Brewfather profile and assigns it using YC's existing profile engine.
-A running schedule does not need continued access to Brewfather. Later edits in Brewfather do not change the running YC schedule. Incoming
-manual SG and optional outbound measurements are described below.
+A running schedule does not need continued access to Brewfather. Later edits in
+Brewfather do not change the running YC schedule. Incoming manual SG and optional
+outbound measurements are described below.
 
 Holds and ramps have separate durations: a Brewfather ramp adds time before its
 hold. The review shows the resulting curve and expandable steps. An initial
@@ -33,9 +48,8 @@ saving active status fails, retry completes that batch without reassigning the
 profile. Reopening also detects the same saved profile already assigned to the
 chosen controller. A different assigned profile requires manual review.
 
-The older diagnostic preview remains available directly at `/brewfather/`; it
-can inspect readings, but it is no longer the entry point in Settings. It is
-separate from starting batches and makes no control changes.
+The diagnostic view at `/brewfather/` can inspect plans and readings without
+starting a batch or changing control. Use the batch-start flow for a fermentation.
 
 ## Manual gravity readings
 
@@ -63,11 +77,10 @@ The sensor selection associates the condition with the batch; imported samples
 are not added to the sensor's reusable history or calibration references.
 A later correction cannot undo a profile step already confirmed by the controller.
 
-Finishing a batch stops polling; saved readings remain. Disconnecting Brewfather
-stops upstream requests without stopping the local temperature profile. This
-connection only reads Brewfather: it does not change OG, FG, the running plan,
-or send imported values back. Outbound Custom Stream exports remain separate.
-
+Finishing a batch stops polling; saved readings remain. Disconnecting the
+Brewfather API connection stops incoming requests without stopping the local
+temperature profile or the separately configured Custom Stream exporter. The API
+connection only reads Brewfather: it does not change OG, FG or the running plan.
 
 ## Send equipment measurements
 
@@ -88,20 +101,22 @@ channel for sending equipment measurements to Brewfather.
 YC sends fresh beer, chamber and room temperatures, target/state, and automatic
 iSpindel SG when available. Controller readings must be at most two minutes old;
 iSpindel readings at most one hour old. Both must be from this batch's lifetime.
-Manual SG imported from Brewfather is never sent back. No previous batch history
-is uploaded, and there is no automatic catch-up after an outage.
+Local manual SG is not exported, and manual SG imported from Brewfather is never
+sent back. No previous batch history is uploaded, and there is no automatic
+catch-up after an outage.
 
 Delivery is limited to once per 15 minutes per equipment name. The reservation is
 saved before a request, so restarting, re-enabling or switching batches does not
 bypass the interval. An unconfirmed delivery waits before retrying. **Last delivery
 accepted** means Custom Stream returned HTTP success without an explicit rejection;
-it does not prove the
-device is attached to the correct batch.
+it does not prove the device is attached to the correct batch.
 
 **Stop sending**, **Finish batch**, changing the linked batch/equipment, replacing
 or removing the stream URL, and restoring application data stop batch delivery.
-Temperature control and incoming manual SG continue independently. `--disable-export`
-and `--maintenance` block sending. Existing separately configured export destinations
+Stopping outbound reporting does not itself stop control or incoming SG. Finishing
+a batch also stops its incoming polling; temperature control follows the choice
+you make in the Finish batch flow. `--disable-export` and `--maintenance` block
+sending. Existing separately configured export destinations
 remain separate; stop a legacy Brewfather destination before enabling batch delivery
 under the same equipment name. Only one active batch may send under that name.
 
@@ -125,8 +140,9 @@ leaving the flow. Cancel returns to Manual.
 
 ## Encryption and recovery
 
-User ID, API key and the separate Custom Stream logging ID are encrypted with AES-256-GCM (ring), a fresh random
-96-bit nonce and versioned associated data before insertion into the dedicated
+User ID, API key and the separate Custom Stream logging ID are encrypted with
+AES-256-GCM (ring), a fresh random 96-bit nonce and versioned associated data
+before insertion into the dedicated
 SQLite `service_credentials` table. The 256-bit encryption key is a separate
 owner-only file; it is never in SQLite. By default its path is the database path
 with extension `.credentials.key`, created atomically on the first successful
@@ -134,8 +150,7 @@ connection. The normal writable state volume therefore persists it across
 container recreation. Do not delete this file while retaining the database.
 
 For a separately managed key, set `YEASTCRAFT_CREDENTIAL_KEY_FILE` to a mounted
-file containing exactly32 random bytes, readable by the runtime user and mode600.
-The previous plaintext `YEASTCRAFT_BREWFATHER_CREDENTIALS_FILE` is no longer read.
+file containing exactly 32 random bytes, readable by the runtime user and mode 600.
 Do not paste credentials or encryption keys into issues or tracked config.
 
 Application JSON/SQLite exports omit the connection and its key; restoring
@@ -143,11 +158,11 @@ application data keeps the destination's connection unchanged. Full host/databas
 backups contain encrypted credentials and need the corresponding key to unlock
 them. Back up the key separately in private recovery storage. A missing or wrong
 key fails closed; YC does not silently replace it. Restore the correct key, or
-disconnect and connect again. Restart clears caches after manual recovery.
+remove both saved connections before creating a replacement key and reconnecting.
+Restart clears caches after manual recovery.
 
 Encryption protects a copied database without its key. It does not protect
-against someone who controls the running server and can read both. Previously
-created host backups may still contain the former plaintext credential file.
+against someone who controls the running server and can read both.
 
 ## Request and memory limits
 
@@ -171,8 +186,12 @@ Synthetic tests cover translation boundaries against YC's actual profile
 engine, initial ramps, pressure omission, missing/invalid/zero durations,
 fractional and ramp-only steps, final hold/off, data projection, readings,
 cache and request limits. Route tests enforce login, cursor validation and
-GET-only access. Mobile/desktop browser tests cover connection errors, batch
-selection, draft restoration, unit conversion, final behavior and recovery after
+GET-only REST access. Custom Stream tests cover encrypted settings, explicit
+activation, fresh automatic readings, persistent intervals, response handling and
+stopping on completion, disconnection or restore. Mobile/desktop browser tests
+cover connection errors, batch selection, draft restoration, unit conversion,
+final behavior and recovery after
 a failed batch activation without repeated profile assignment. Tests never use
 an account or physical controller. Real-account acceptance is a separate local
-deployment check.
+deployment check; see the [validation record](VALIDATION.md#brewfather-delivery)
+for verified behavior and remaining limits.

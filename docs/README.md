@@ -8,6 +8,7 @@ Start with your fridge. Dig into the internals when you need them.
 | ----------------------------------------------------------- | --------------------------------------------------------------------- |
 | [Quick start](../README.md#quick-start-with-docker-compose) | Build YeastCraft, open the app and create your account                        |
 | [Installation and operations](INSTALLATION.md)              | Connect equipment, set temperatures, export readings and keep backups |
+| [Brewfather](BREWFATHER.md) | Start linked batches, sync manual SG and send equipment readings |
 | [Compatibility](COMPATIBILITY.md)                           | Check tested hardware and the limits of this preview                  |
 | [Gravity-controlled profiles](GRAVITY_PROFILES.md)          | Let measurements decide when a temperature step finishes              |
 | [Tilt HTTP receivers](TILT.md)                              | Try experimental Tilt integrations and understand their boundaries    |
@@ -36,11 +37,9 @@ checks and code changes. No spare fridge? The [iSpindel](../tools/ispindel-emula
 [Tilt](../tools/tilt-emulator/README.md) emulators let you work with synthetic data.
 
 Planned work lives in [GitHub Issues](https://github.com/jonohr/YeastCraft/issues).
-The [Brewfather integration proposal](https://github.com/jonohr/YeastCraft/issues/1)
-is a plan, not a list of features you can use today.
+For the supported Brewfather workflows and their limits, use the
+[connection guide](BREWFATHER.md). Issues track ideas and follow-up work.
 
 The validation and audit documents describe test coverage and its limits, not a
 promise that every board, firmware or future revision behaves identically. If
 your setup teaches us something new, please bring the details.
-
-- [Brewfather batch preview and credentials](BREWFATHER.md)
