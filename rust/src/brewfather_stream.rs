@@ -358,12 +358,42 @@ async fn send(client: &reqwest::Client, url: &str, data: &Value) -> (bool, i64, 
             _ => return (false, INTERVAL, "Invalid or oversized reply".into()),
         }
     }
+    // HTTP success is the transport receipt. Brewfather also returns successful
+    // replies that differ from the documented JSON {"result":"OK"}. Never
+    // interpret an explicit rejection as success, or claim batch attachment.
+    let negative = |text: &str| {
+        let text = text.to_ascii_lowercase();
+        [
+            "ignored",
+            "error",
+            "failed",
+            "failure",
+            "rejected",
+            "not ok",
+            "too frequent",
+        ]
+        .iter()
+        .any(|word| text.contains(word))
+    };
+    let rejected = serde_json::from_slice::<Value>(&body).map_or_else(
+        |_| negative(&String::from_utf8_lossy(&body)),
+        |v| {
+            let result = v
+                .get("result")
+                .and_then(Value::as_str)
+                .or(v.as_str())
+                .unwrap_or("")
+                .to_ascii_lowercase();
+            v.get("success") == Some(&Value::Bool(false))
+                || v.get("error")
+                    .is_some_and(|e| !e.is_null() && e != false && e != "")
+                || negative(&result)
+        },
+    );
     (
-        serde_json::from_slice::<Value>(&body)
-            .ok()
-            .is_some_and(|v| v["result"] == "OK"),
+        !rejected,
         INTERVAL,
-        "Brewfather did not acknowledge the reading".into(),
+        "Brewfather rejected the reading".into(),
     )
 }
 async fn deliver(a: &App, id: &str, client: &reqwest::Client) -> Result<()> {
@@ -536,10 +566,16 @@ mod tests {
         }
     }
     #[tokio::test]
-    async fn only_confirmed_json_ack_counts_and_redirects_are_not_followed() {
+    async fn http_receipts_allow_reply_variants_but_reject_explicit_errors_and_redirects() {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
         for (code, body, retry, ok) in [
             (200, "{\"result\":\"OK\"}", "0", true),
+            (200, "{\"result\":\"ok\"}", "0", true),
+            (200, "OK", "0", true),
+            (200, "Ignored: too frequent", "0", false),
+            (204, "", "0", true),
+            (200, "{\"success\":false}", "0", false),
+            (200, "{\"error\":\"Rejected\"}", "0", false),
             (200, "{\"result\":\"ignored\"}", "0", false),
             (302, "redirect", "0", false),
             (429, "rate limited", "3600", false),
