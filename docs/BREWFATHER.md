@@ -15,8 +15,8 @@ starts a new local fermentation from the first step. **Save draft** preserves
 the selected plan, OG and equipment without assigning a profile or sending a
 command. Reopening the draft retains the choice. **Start batch** makes a local
 copy of a Brewfather profile and assigns it using YC's existing profile engine.
-A running schedule does not need continued access to Brewfather. This is not
-bidirectional synchronization; the existing **Brewfather export** is separate.
+A running schedule does not need continued access to Brewfather. Later edits in Brewfather do not change the running YC schedule. Incoming
+manual SG and optional outbound measurements are described below.
 
 Holds and ramps have separate durations: a Brewfather ramp adds time before its
 hold. The review shows the resulting curve and expandable steps. An initial
@@ -69,6 +69,44 @@ connection only reads Brewfather: it does not change OG, FG, the running plan,
 or send imported values back. Outbound Custom Stream exports remain separate.
 
 
+## Send equipment measurements
+
+The API connection reads batches and manual SG. **Custom Stream** is the separate
+channel for sending equipment measurements to Brewfather.
+
+1. In **Settings → Integrations → Send measurements to Brewfather**, save the
+   Custom Stream URL from Brewfather's Settings → Power-ups. It is masked,
+   encrypted with the same server key as API credentials, and never returned to
+   the browser. Saving sends no test readings and pauses any existing batch exports.
+2. Open an active Brewfather-linked batch and choose **Start sending**. Its
+   **Device in Brewfather** is the controller's actual name, or the sensor's name
+   for a sensor-only batch. Names stay the same when you change recipes or batches.
+3. After the first delivery, open the intended Brewfather batch → Readings →
+   Devices and **Attach** that device. YC cannot attach it through the REST API.
+   Check the attachment again when starting another batch with the same equipment.
+
+YC sends fresh beer, chamber and room temperatures, target/state, and automatic
+iSpindel SG when available. Controller readings must be at most two minutes old;
+iSpindel readings at most one hour old. Both must be from this batch's lifetime.
+Manual SG imported from Brewfather is never sent back. No previous batch history
+is uploaded, and there is no automatic catch-up after an outage.
+
+Delivery is limited to once per 15 minutes per equipment name. The reservation is
+saved before a request, so restarting, re-enabling or switching batches does not
+bypass the interval. An unconfirmed delivery waits before retrying. **Last delivery
+accepted** means Custom Stream acknowledged the request; it does not prove the
+device is attached to the correct batch.
+
+**Stop sending**, **Finish batch**, changing the linked batch/equipment, replacing
+or removing the stream URL, and restoring application data stop batch delivery.
+Temperature control and incoming manual SG continue independently. `--disable-export`
+and `--maintenance` block sending. Existing separately configured export destinations
+remain separate; stop a legacy Brewfather destination before enabling batch delivery
+under the same equipment name. Only one active batch may send under that name.
+
+See Brewfather's [Custom Stream](https://docs.brewfather.app/integrations/custom-stream)
+and [device attachment](https://docs.brewfather.app/devices) guides.
+
 ## Connect your account
 
 Open **Settings → Integrations → Brewfather connection**. Enter your User ID
@@ -86,7 +124,7 @@ leaving the flow. Cancel returns to Manual.
 
 ## Encryption and recovery
 
-Both User ID and API key are encrypted with AES-256-GCM (ring), a fresh random
+User ID, API key and the separate Custom Stream logging ID are encrypted with AES-256-GCM (ring), a fresh random
 96-bit nonce and versioned associated data before insertion into the dedicated
 SQLite `service_credentials` table. The 256-bit encryption key is a separate
 owner-only file; it is never in SQLite. By default its path is the database path

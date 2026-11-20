@@ -47,7 +47,8 @@ to run it. Your fridge already has enough humming away.
 - Experimental Tilt cloud HTTP and legacy TiltBridge receivers (hardware unverified).
 - Batch history, charts, controller-state bands and a bounded raw protocol log.
 - Local login, SQLite backup/restore and import from legacy Fermentrack SQLite/CSV data.
-- Send readings to Brewfather; other export adapters are implemented but need real-service testing.
+- Send active-batch equipment readings to Brewfather under the equipment’s own name.
+- Other export adapters are implemented but need real-service testing.
   Destinations send nothing until you configure and enable them.
 
 ## A little less RAM, please
