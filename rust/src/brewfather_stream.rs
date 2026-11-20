@@ -318,9 +318,22 @@ fn reserve(c: &mut Connection, id: &str, now: i64) -> Result<Option<Value>> {
     tx.commit()?;
     Ok(Some(data))
 }
-async fn send(client: &reqwest::Client, url: &str, data: &Value) -> (bool, i64) {
-    let Ok(mut response) = client.post(url).json(data).send().await else {
-        return (false, INTERVAL);
+async fn send(client: &reqwest::Client, url: &str, data: &Value) -> (bool, i64, String) {
+    let mut response = match client.post(url).json(data).send().await {
+        Ok(response) => response,
+        Err(error) => {
+            return (
+                false,
+                INTERVAL,
+                if error.is_timeout() {
+                    "Connection timed out".into()
+                } else if error.is_connect() {
+                    "Could not connect securely".into()
+                } else {
+                    "Request failed".into()
+                },
+            );
+        }
     };
     let retry = response
         .headers()
@@ -331,14 +344,18 @@ async fn send(client: &reqwest::Client, url: &str, data: &Value) -> (bool, i64) 
         .clamp(0, 86400)
         * 1000;
     if !response.status().is_success() {
-        return (false, retry.max(INTERVAL));
+        return (
+            false,
+            retry.max(INTERVAL),
+            format!("Brewfather returned HTTP {}", response.status().as_u16()),
+        );
     }
     let mut body = Vec::new();
     loop {
         match response.chunk().await {
             Ok(Some(chunk)) if body.len() + chunk.len() <= 4096 => body.extend_from_slice(&chunk),
             Ok(None) => break,
-            _ => return (false, INTERVAL),
+            _ => return (false, INTERVAL, "Invalid or oversized reply".into()),
         }
     }
     (
@@ -346,6 +363,7 @@ async fn send(client: &reqwest::Client, url: &str, data: &Value) -> (bool, i64) 
             .ok()
             .is_some_and(|v| v["result"] == "OK"),
         INTERVAL,
+        "Brewfather did not acknowledge the reading".into(),
     )
 }
 async fn deliver(a: &App, id: &str, client: &reqwest::Client) -> Result<()> {
@@ -363,7 +381,7 @@ async fn deliver(a: &App, id: &str, client: &reqwest::Client) -> Result<()> {
     };
     let mut url = reqwest::Url::parse("https://log.brewfather.net/stream")?;
     url.query_pairs_mut().append_pair("id", &secret.api_key);
-    let (success, delay) = send(client, url.as_str(), &data).await;
+    let (success, delay, reason) = send(client, url.as_str(), &data).await;
     let id = id.to_owned();
     let name = data["name"].as_str().unwrap().to_owned();
     a.db.run(move |c| {
@@ -379,7 +397,9 @@ async fn deliver(a: &App, id: &str, client: &reqwest::Client) -> Result<()> {
         b.data["brewfather_export"]["error"] = if success {
             Value::Null
         } else {
-            json!("Delivery not confirmed. Will retry after the reporting interval.")
+            json!(format!(
+                "{reason}. Will retry after the reporting interval."
+            ))
         };
         if success {
             b.data["brewfather_export"]["last_success"] = json!(end);
