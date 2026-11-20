@@ -2,6 +2,7 @@
 mod auth;
 mod backup;
 mod brewfather;
+mod brewfather_stream;
 mod brewfather_sync;
 mod calibration;
 mod credential_store;
@@ -147,6 +148,17 @@ fn router(a: App, static_dir: PathBuf) -> Router {
             "/batches/{id}/brewfather-sync",
             post(brewfather::sync_batch),
         )
+        .route(
+            "/brewfather/stream",
+            get(brewfather_stream::connection)
+                .put(brewfather_stream::configure)
+                .delete(brewfather_stream::disconnect)
+                .layer(DefaultBodyLimit::max(4096)),
+        )
+        .route(
+            "/batches/{id}/brewfather-export",
+            get(brewfather_stream::status).put(brewfather_stream::enable),
+        )
         .route("/brewfather/batches", get(brewfather::batches))
         .route("/brewfather/batches/{id}", get(brewfather::batch))
         .route("/brewfather/batches/{id}/plan", get(brewfather::plan))
@@ -260,6 +272,12 @@ async fn create(
         name: v.name,
         data: v.data,
     };
+    let mut e = e;
+    if e.kind == "batches"
+        && let Some(data) = e.data.as_object_mut()
+    {
+        data.remove("brewfather_export");
+    }
     let e =
         a.db.run(move |c| {
             db::put(c, &e)?;
@@ -273,6 +291,11 @@ async fn update(
     Path((kind, id)): Path<(String, String)>,
     Json(v): Json<Input>,
 ) -> Result<Json<Entity>, ApiError> {
+    let _export_operation = if kind == "batches" {
+        Some(brewfather_stream::operation().lock().await)
+    } else {
+        None
+    };
     let _operation = if kind == "devices" {
         Some(protocol::operation(&id).lock_owned().await)
     } else {
@@ -293,6 +316,15 @@ async fn update(
             };
             if e.kind == "batches" {
                 e.data["brewfather_sync"] = old.data["brewfather_sync"].clone();
+                e.data["brewfather_export"] = old.data["brewfather_export"].clone();
+                if (e.data["status"] != "active"
+                    || e.data["brewfather"] != old.data["brewfather"]
+                    || e.data["device"] != old.data["device"]
+                    || e.data["sensor"] != old.data["sensor"])
+                    && e.data["brewfather_export"].is_object()
+                {
+                    e.data["brewfather_export"]["enabled"] = json!(false);
+                }
             }
             if e.kind == "devices" {
                 e.data["profile_run"] = if e.data["profile"].is_string() {
@@ -311,6 +343,11 @@ async fn remove(
     State(a): State<App>,
     Path((kind, id)): Path<(String, String)>,
 ) -> Result<Json<Value>, ApiError> {
+    let _export_operation = if kind == "batches" {
+        Some(brewfather_stream::operation().lock().await)
+    } else {
+        None
+    };
     let _operation = if kind == "devices" {
         Some(protocol::operation(&id).lock_owned().await)
     } else {
@@ -582,6 +619,7 @@ async fn main() -> anyhow::Result<()> {
     }
     if a.exports {
         tokio::spawn(integrations::worker(a.clone()));
+        tokio::spawn(brewfather_stream::worker(a.clone()));
     }
     let listen = opt("--listen", "127.0.0.1:8315");
     let listener = tokio::net::TcpListener::bind(&listen).await?;

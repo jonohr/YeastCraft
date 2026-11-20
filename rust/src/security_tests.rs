@@ -342,3 +342,176 @@ async fn legacy_import_rejects_symlink_escape_from_import_root() {
     assert_eq!(status, StatusCode::BAD_REQUEST);
     assert_eq!(body["error"], "Import paths must remain inside import root");
 }
+
+#[tokio::test]
+async fn brewfather_stream_setup_is_private_opt_in_and_stops_with_batch() {
+    let temp = tempfile::tempdir().unwrap();
+    let mut a = app(temp.path());
+    let disabled = router(a.clone(), temp.path().into());
+    a.exports = true; // No worker is started; this test never contacts Brewfather.
+    let r = router(a.clone(), temp.path().into());
+    for (path, method) in [
+        ("/api/v1/brewfather/stream", "GET"),
+        ("/api/v1/brewfather/stream", "PUT"),
+        ("/api/v1/brewfather/stream", "DELETE"),
+        ("/api/v1/batches/b/brewfather-export", "GET"),
+        ("/api/v1/batches/b/brewfather-export", "PUT"),
+    ] {
+        assert_eq!(
+            req(&r, path, method, json!({}), None, None).await.0,
+            StatusCode::UNAUTHORIZED
+        );
+    }
+    let cookie = login(&r).await;
+    let c = a.db.open().unwrap();
+    db::put(
+        &c,
+        &Entity {
+            id: "d".into(),
+            kind: "devices".into(),
+            name: "Lilla Kylen".into(),
+            data: json!({}),
+        },
+    )
+    .unwrap();
+    db::put(&c,&Entity{id:"b".into(),kind:"batches".into(),name:"Recipe name".into(),data:json!({"device":"d","status":"active","created":"2026-11-20T08:00:00Z","brewfather":{"id":"remote"}})}).unwrap();
+    let path = "/api/v1/batches/b/brewfather-export";
+    assert_eq!(
+        req(
+            &r,
+            path,
+            "PUT",
+            json!({"enabled":true}),
+            Some(&cookie),
+            None
+        )
+        .await
+        .0,
+        StatusCode::BAD_REQUEST
+    );
+    let url = json!({"url":"https://log.brewfather.net/stream?id=synthetic-private-id"});
+    let result = req(
+        &r,
+        "/api/v1/brewfather/stream",
+        "PUT",
+        url.clone(),
+        Some(&cookie),
+        None,
+    )
+    .await;
+    assert_eq!(result.0, StatusCode::OK);
+    assert_eq!(result.2["encrypted"], true);
+    assert!(!result.2.to_string().contains("synthetic-private-id"));
+    assert_eq!(
+        req(
+            &disabled,
+            path,
+            "PUT",
+            json!({"enabled":true}),
+            Some(&cookie),
+            None
+        )
+        .await
+        .0,
+        StatusCode::BAD_REQUEST
+    );
+    let state = req(
+        &r,
+        path,
+        "PUT",
+        json!({"enabled":true}),
+        Some(&cookie),
+        None,
+    )
+    .await;
+    assert_eq!(state.0, StatusCode::OK);
+    assert_eq!(state.2["device_name"], "Lilla Kylen");
+    // Generic edits cannot forge delivery receipts or change the destination silently.
+    let mut b = db::get(&c, "b").unwrap();
+    b.data["brewfather_export"] = json!({"enabled":false,"last_success":123});
+    let saved = req(
+        &r,
+        "/api/v1/resources/batches/b",
+        "PUT",
+        json!({"name":b.name,"data":b.data}),
+        Some(&cookie),
+        None,
+    )
+    .await;
+    assert_eq!(saved.0, StatusCode::OK);
+    assert_eq!(saved.2["data"]["brewfather_export"]["enabled"], true);
+    assert!(saved.2["data"]["brewfather_export"]["last_success"].is_null());
+    assert_eq!(
+        req(
+            &r,
+            "/api/v1/brewfather/stream",
+            "PUT",
+            url,
+            Some(&cookie),
+            None
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    assert_eq!(
+        db::get(&c, "b").unwrap().data["brewfather_export"]["enabled"],
+        false
+    );
+    assert_eq!(
+        req(
+            &r,
+            path,
+            "PUT",
+            json!({"enabled":true}),
+            Some(&cookie),
+            None
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    b.data["status"] = json!("completed");
+    let saved = req(
+        &r,
+        "/api/v1/resources/batches/b",
+        "PUT",
+        json!({"name":b.name,"data":b.data}),
+        Some(&cookie),
+        None,
+    )
+    .await;
+    assert_eq!(saved.0, StatusCode::OK);
+    assert_eq!(saved.2["data"]["brewfather_export"]["enabled"], false);
+    assert_eq!(
+        req(
+            &r,
+            path,
+            "PUT",
+            json!({"enabled":true}),
+            Some(&cookie),
+            None
+        )
+        .await
+        .0,
+        StatusCode::BAD_REQUEST
+    );
+    let backup = db::snapshot(&c).unwrap();
+    assert!(!backup.to_string().contains("synthetic-private-id"));
+    let mut restored = a.db.open().unwrap();
+    db::restore(&mut restored, backup).unwrap();
+    assert!(db::get(&restored, "b").unwrap().data["brewfather_export"].is_null());
+    assert_eq!(
+        req(
+            &r,
+            "/api/v1/brewfather/stream",
+            "DELETE",
+            json!({}),
+            Some(&cookie),
+            None
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+}

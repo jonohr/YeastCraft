@@ -1,3 +1,4 @@
+import { BatchBrewfatherExport } from "./brewfather-stream";
 // SPDX-License-Identifier: GPL-3.0-only
 import { useState } from "react";
 import { api, type Entity } from "./api";
@@ -59,6 +60,7 @@ export default function BrewfatherSync({
       </small>
       {(error || sync.error) && <p role="alert">{error || sync.error}</p>}
       {sync.warning && <p role="status">{sync.warning}</p>}
+      <BatchBrewfatherExport batch={batch} refresh={refresh} />
     </section>
   );
 }

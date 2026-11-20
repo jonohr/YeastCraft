@@ -3282,3 +3282,5 @@ input[type="checkbox"] {
 .brewfather-sync .section-title h2 { margin: 0; }
 .brewfather-sync .section-title button { flex: none; white-space: nowrap; }
 .brewfather-sync p { overflow-wrap: anywhere; }
+
+.brewfather-outbound { border-top: 1px solid var(--line); margin-top: 1rem; padding-top: 1rem; }

@@ -1,3 +1,4 @@
+import BrewfatherStream from "./brewfather-stream";
 import BrewfatherSync from "./brewfather-sync";
 import BrewfatherConnection from "./brewfather-connection";
 import ProtocolLog from "./protocol-log";
@@ -880,7 +881,12 @@ function Collection({ kind }: { kind: string }) {
           Add
         </Button>
       </Heading>
-      {kind === "integrations" && <BrewfatherConnection />}
+      {kind === "integrations" && (
+        <>
+          <BrewfatherConnection />
+          <BrewfatherStream />
+        </>
+      )}
       {kind === "integrations" && (
         <div className="alert">
           Enable both the destination and server exports before sending data.

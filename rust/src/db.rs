@@ -53,7 +53,8 @@ impl Db {
    CREATE TABLE IF NOT EXISTS users(name TEXT PRIMARY KEY,hash TEXT NOT NULL);
    CREATE TABLE IF NOT EXISTS sessions(token TEXT PRIMARY KEY,name TEXT NOT NULL,expires INTEGER NOT NULL);
    CREATE TABLE IF NOT EXISTS imports(digest TEXT PRIMARY KEY,report TEXT NOT NULL,created INTEGER NOT NULL);
-   CREATE TABLE IF NOT EXISTS audit(time INTEGER NOT NULL,action TEXT NOT NULL,detail TEXT NOT NULL);")?;
+   CREATE TABLE IF NOT EXISTS audit(time INTEGER NOT NULL,action TEXT NOT NULL,detail TEXT NOT NULL);
+   CREATE TABLE IF NOT EXISTS brewfather_delivery(name TEXT PRIMARY KEY,next_attempt INTEGER NOT NULL);")?;
         let has_sequence = c
             .prepare("PRAGMA table_info(points)")?
             .query_map([], |r| r.get::<_, String>(1))?
@@ -276,6 +277,9 @@ pub fn restore(c: &mut Connection, v: Value) -> Result<Value> {
         }
         if e.kind == "integrations" {
             e.data["enabled"] = json!(false);
+        }
+        if e.kind == "batches" {
+            e.data.as_object_mut().unwrap().remove("brewfather_export");
         }
         put(&tx, &e)?;
     }

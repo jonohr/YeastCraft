@@ -81,7 +81,7 @@ fn cipher(k: &[u8; 32]) -> Result<aead::LessSafeKey> {
             .map_err(|_| anyhow!("Invalid encryption key"))?,
     ))
 }
-fn seal(k: &[u8; 32], data: &Credentials) -> Result<Vec<u8>> {
+fn seal(k: &[u8; 32], data: &Credentials, aad: &[u8]) -> Result<Vec<u8>> {
     let mut nonce = [0; 12];
     SystemRandom::new()
         .fill(&mut nonce)
@@ -90,7 +90,7 @@ fn seal(k: &[u8; 32], data: &Credentials) -> Result<Vec<u8>> {
     cipher(k)?
         .seal_in_place_append_tag(
             aead::Nonce::assume_unique_for_key(nonce),
-            aead::Aad::from(AAD),
+            aead::Aad::from(aad),
             &mut plain,
         )
         .map_err(|_| anyhow!("Encryption failed"))?;
@@ -99,7 +99,7 @@ fn seal(k: &[u8; 32], data: &Credentials) -> Result<Vec<u8>> {
     out.extend(plain);
     Ok(out)
 }
-fn open(k: &[u8; 32], blob: &[u8]) -> Result<Credentials> {
+fn open(k: &[u8; 32], blob: &[u8], aad: &[u8]) -> Result<Credentials> {
     ensure!(
         blob.len() >= 29 && blob[0] == 1,
         "Unsupported encrypted record"
@@ -109,7 +109,7 @@ fn open(k: &[u8; 32], blob: &[u8]) -> Result<Credentials> {
     let plain = cipher(k)?
         .open_in_place(
             aead::Nonce::assume_unique_for_key(nonce),
-            aead::Aad::from(AAD),
+            aead::Aad::from(aad),
             &mut data,
         )
         .map_err(|_| anyhow!("Cannot decrypt credentials"))?;
@@ -122,39 +122,55 @@ fn table(c: &rusqlite::Connection) -> Result<()> {
     Ok(())
 }
 pub fn load(db: &Db, path: &Path) -> Result<Option<Credentials>> {
+    load_named(db, path, "brewfather")
+}
+fn aad(service: &str) -> Result<&'static [u8]> {
+    match service {
+        "brewfather" => Ok(AAD),
+        "brewfather_stream" => Ok(b"YeastCraft/Brewfather/stream/v1"),
+        _ => anyhow::bail!("Unknown credential service"),
+    }
+}
+pub(crate) fn load_named(db: &Db, path: &Path, service: &str) -> Result<Option<Credentials>> {
+    let aad = aad(service)?;
     let c = db.open()?;
     table(&c)?;
     let blob: Option<Vec<u8>> = c
         .query_row(
-            "SELECT ciphertext FROM service_credentials WHERE service='brewfather'",
-            [],
+            "SELECT ciphertext FROM service_credentials WHERE service=?",
+            [service],
             |r| r.get(0),
         )
         .optional()?;
-    blob.map(|b| open(&key(path, false)?, &b)).transpose()
+    blob.map(|b| open(&key(path, false)?, &b, aad)).transpose()
 }
 pub fn store(db: &Db, path: &Path, value: &Credentials) -> Result<()> {
+    store_named(db, path, "brewfather", value)
+}
+pub(crate) fn store_named(db: &Db, path: &Path, service: &str, value: &Credentials) -> Result<()> {
+    let aad = aad(service)?;
     value.validate()?;
     let c = db.open()?;
     table(&c)?;
     let exists: bool = c.query_row(
-        "SELECT EXISTS(SELECT 1 FROM service_credentials WHERE service='brewfather')",
+        "SELECT EXISTS(SELECT 1 FROM service_credentials)",
         [],
         |r| r.get(0),
     )?;
     // Never silently generate a replacement key for existing encrypted data.
     let k = key(path, !exists)?;
-    let blob = seal(&k, value)?;
-    c.execute("INSERT INTO service_credentials VALUES('brewfather',?1) ON CONFLICT(service) DO UPDATE SET ciphertext=excluded.ciphertext",[blob])?;
+    let blob = seal(&k, value, aad)?;
+    c.execute("INSERT INTO service_credentials VALUES(?1,?2) ON CONFLICT(service) DO UPDATE SET ciphertext=excluded.ciphertext",rusqlite::params![service,blob])?;
     Ok(())
 }
 pub fn remove(db: &Db) -> Result<()> {
+    remove_named(db, "brewfather")
+}
+pub(crate) fn remove_named(db: &Db, service: &str) -> Result<()> {
+    aad(service)?;
     let c = db.open()?;
     table(&c)?;
-    c.execute(
-        "DELETE FROM service_credentials WHERE service='brewfather'",
-        [],
-    )?;
+    c.execute("DELETE FROM service_credentials WHERE service=?", [service])?;
     Ok(())
 }
 #[cfg(test)]
@@ -167,17 +183,49 @@ mod tests {
         }
     }
     #[test]
+    fn stream_secret_is_isolated_encrypted_and_never_replaces_a_missing_shared_key() {
+        let dir = tempfile::tempdir().unwrap();
+        let db = Db::init(dir.path().join("db.sqlite")).unwrap();
+        let path = dir.path().join("key");
+        store(&db, &path, &sample()).unwrap();
+        store_named(
+            &db,
+            &path,
+            "brewfather_stream",
+            &Credentials {
+                user_id: "brewfather_stream".into(),
+                api_key: "private-logging-id".into(),
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            load_named(&db, &path, "brewfather_stream")
+                .unwrap()
+                .unwrap()
+                .api_key,
+            "private-logging-id"
+        );
+        assert_eq!(load(&db, &path).unwrap().unwrap().api_key, sample().api_key);
+        let c = db.open().unwrap();
+        c.execute("UPDATE service_credentials SET ciphertext=(SELECT ciphertext FROM service_credentials WHERE service='brewfather') WHERE service='brewfather_stream'",[]).unwrap();
+        assert!(load_named(&db, &path, "brewfather_stream").is_err());
+        remove_named(&db, "brewfather_stream").unwrap();
+        std::fs::remove_file(&path).unwrap();
+        assert!(store_named(&db, &path, "brewfather_stream", &sample()).is_err());
+        assert!(!path.exists());
+    }
+    #[test]
     fn encrypted_roundtrip_restart_tamper_and_wrong_key() {
         let k = [7; 32];
-        let c = seal(&k, &sample()).unwrap();
-        let d = seal(&k, &sample()).unwrap();
+        let c = seal(&k, &sample(), AAD).unwrap();
+        let d = seal(&k, &sample(), AAD).unwrap();
         assert_ne!(c, d);
         assert!(!c.windows(20).any(|w| w == b"synthetic-secret-key"));
-        assert_eq!(open(&k, &c).unwrap().api_key, sample().api_key);
-        assert!(open(&[8; 32], &c).is_err());
+        assert_eq!(open(&k, &c, AAD).unwrap().api_key, sample().api_key);
+        assert!(open(&[8; 32], &c, AAD).is_err());
         let mut t = c.clone();
         t[18] ^= 1;
-        assert!(open(&k, &t).is_err());
+        assert!(open(&k, &t, AAD).is_err());
     }
     #[test]
     fn persistence_separate_key_and_no_plaintext() {
