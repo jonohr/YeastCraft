@@ -37,6 +37,38 @@ The older diagnostic preview remains available directly at `/brewfather/`; it
 can inspect readings, but it is no longer the entry point in Settings. It is
 separate from starting batches and makes no control changes.
 
+## Manual gravity readings
+
+For an active batch started from Brewfather, YC checks for manual SG readings
+at startup when due and every 15 minutes thereafter. The batch page shows the
+latest manual SG, its original measurement time, last successful sync and errors.
+**Sync readings** checks immediately (at most once per minute). Collection must
+be enabled. No new API permission or separate sensor is needed to show readings.
+
+Only explicitly manual readings dated between the YC batch's start and now are
+copied. Automatic device readings and earlier history are ignored. The readings
+stay with that batch, retain their original timestamps and are labelled
+**Manual · Brewfather**. Repeated fetches and restarts do not duplicate them.
+Edits update the matching timestamp. When a complete response no longer contains
+an imported reading, YC removes that imported copy; local measurements remain.
+Responses of 5000 or more points are treated as potentially truncated: missing
+older points are retained and a warning appears. Network failures or malformed
+responses retain the previous data and report a sync error.
+
+Manual SG conditions can use these readings when the running profile selects
+**Manual** readings and the same gravity sensor as the active batch on that
+controller. Readings from other batches do not count. Existing freshness and
+stability rules still apply; a single iSpindel packet is not a manual measurement.
+The sensor selection associates the condition with the batch; imported samples
+are not added to the sensor's reusable history or calibration references.
+A later correction cannot undo a profile step already confirmed by the controller.
+
+Finishing a batch stops polling; saved readings remain. Disconnecting Brewfather
+stops upstream requests without stopping the local temperature profile. This
+connection only reads Brewfather: it does not change OG, FG, the running plan,
+or send imported values back. Outbound Custom Stream exports remain separate.
+
+
 ## Connect your account
 
 Open **Settings → Integrations → Brewfather connection**. Enter your User ID
@@ -80,7 +112,9 @@ created host backups may still contain the former plaintext credential file.
 
 ## Request and memory limits
 
-Requests happen when browsing or refreshing, without background polling.
+Browsing and preview requests happen on demand. Active linked batches also poll
+readings every 15 minutes; the background worker shares the same request budget,
+cache and cooldown as interactive requests.
 The start-plan endpoint fetches only the batch/profile, never readings. Lists
 use Brewfather's documented descending brewDate ordering and pagination
 ([API documentation](https://docs.brewfather.app/api)). Batch

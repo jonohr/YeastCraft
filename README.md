@@ -43,6 +43,7 @@ to run it. Your fridge already has enough humming away.
 - Timed Hold/Ramp profiles and gravity-based step conditions.
 - Start a batch manually, with a saved YC profile, or with a Brewfather fermentation plan.
 - iSpindel ingestion, manual gravity readings and calibration from reference samples.
+- Sync manual SG readings from Brewfather into the linked active batch.
 - Experimental Tilt cloud HTTP and legacy TiltBridge receivers (hardware unverified).
 - Batch history, charts, controller-state bands and a bounded raw protocol log.
 - Local login, SQLite backup/restore and import from legacy Fermentrack SQLite/CSV data.
@@ -142,10 +143,11 @@ review and licensing details.
 
 ## What is brewing next?
 
-Brewfather export already delivers readings. Next, we would like to bring a batch's
-fermentation plan and manual gravity readings back into YeastCraft, so you can plan in
-Brewfather and let YeastCraft run the chamber. That is **planned, not implemented**:
-[follow the integration proposal](https://github.com/jonohr/YeastCraft/issues/1).
+Brewfather can supply a starting fermentation plan and manual SG readings for the
+linked active batch. Outbound Custom Stream export is separate; automatic
+bidirectional measurement synchronization is not implemented.
+[Connection guide](docs/BREWFATHER.md) ·
+[Integration proposal](https://github.com/jonohr/YeastCraft/issues/1).
 
 Found a rough edge? Have equipment we have not tried? [Open an issue](https://github.com/jonohr/YeastCraft/issues).
 A clear description or a careful hardware test is just as welcome as code.
